@@ -50,6 +50,17 @@ int main(void)
 				// Latch 64 bit for output
 				PORT(HUB08_LAT) |= HUB08_LAT_LINE;
 				PORT(HUB08_LAT) &= ~HUB08_LAT_LINE;
+
+				// Clear string to avoid brightening
+				PORT(HUB08_R1) &= ~HUB08_R1_LINE;
+				for (i = 0; i < HUB08_WIDTH; i++) {
+					// Strob data
+					PORT(HUB08_CLK) |= HUB08_CLK_LINE;
+					PORT(HUB08_CLK) &= ~HUB08_CLK_LINE;
+				}
+				// Latch 64 zero bits for output
+				PORT(HUB08_LAT) |= HUB08_LAT_LINE;
+				PORT(HUB08_LAT) &= ~HUB08_LAT_LINE;
 			}
 		}
 		// 1 second delay
