@@ -7,6 +7,6 @@
 #define HUB08_HEIGHT	16
 
 void hub08Init(void);
-void hub08SetLine(uint8_t line);
+void hub08ShowLine(uint8_t line);
 
 #endif // HUB08_H
