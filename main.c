@@ -7,21 +7,27 @@
 
 int main(void)
 {
-	uint8_t line;
-	int16_t k;
-
 	hub08Init();
+	sei();
+
+	hub08Brighness(5);
+
+	uint8_t i, j;
 
 	while (1) {
-		// 1000 cycled outputs
-		for (k = 0; k < 1000; k++)
-			for (line = 0; line < HUB08_HEIGHT; line++)
-				hub08ShowLine(line);
+		for (i = 0; i < 64; i++) {
+			for (j = 0; j < 16; j++) {
+				hub08Pixel(i, j, 1);
+			}
+			_delay_ms(10);
+		}
+		for (i = 0; i < 64; i++) {
+			for (j = 0; j < 16; j++) {
+				hub08Pixel(i, j, 0);
+			}
+			_delay_ms(10);
+		}
 
-		// 1 second delay
-		PORT(HUB08_OE) |= HUB08_OE_LINE;
-		_delay_ms(1000);
-		PORT(HUB08_OE) &= ~HUB08_OE_LINE;
 	}
 
 	return 0;
