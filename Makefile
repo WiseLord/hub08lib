@@ -23,8 +23,8 @@ OBJDUMP  = avr-objdump
 
 AVRDUDE  = avrdude
 AD_MCU = -p $(MCU)
-AD_PROG = -c avr109
-AD_PORT = -P /dev/ttyACM3
+#AD_PROG = -c avr109
+#AD_PORT = -P /dev/ttyACM3
 
 AD_CMDLINE = $(AD_MCU) $(AD_PROG) $(AD_PORT) -V
 

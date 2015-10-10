@@ -48,6 +48,15 @@
 #define ARDUINO_D13			C
 #define ARDUINO_D13_LINE	(1<<7)
 
+#define ARDUINO_MOSI		B
+#define ARDUINO_MOSI_LINE	(1<<2)
+#define ARDUINO_MISO		B
+#define ARDUINO_MISO_LINE	(1<<3)
+#define ARDUINO_SCLK		B
+#define ARDUINO_SCLK_LINE	(1<<1)
+#define ARDUINO_SS			B
+#define ARDUINO_SS_LINE		(1<<0)
+
 #endif
 
 #endif /* ARDUINO_H */

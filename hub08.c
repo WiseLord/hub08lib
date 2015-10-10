@@ -3,29 +3,47 @@
 #include <avr/interrupt.h>
 #include "pins.h"
 
-// Screen buffer
-uint8_t row0[HUB08_WIDTH];
-uint8_t row1[HUB08_WIDTH];
+static uint8_t fb[HUB08_FB_SIZE];					// Frame buffer
+static int8_t line;									// Current line
 
-static void hub08SetLine(uint8_t line)
+static void hub08SelectLine(void)
 {
-	// Switch to new line
 	if (line & (1<<0))
 		PORT(HUB08_LA) |= HUB08_LA_LINE;
 	else
 		PORT(HUB08_LA) &= ~HUB08_LA_LINE;
+
 	if (line & (1<<1))
 		PORT(HUB08_LB) |= HUB08_LB_LINE;
 	else
 		PORT(HUB08_LB) &= ~HUB08_LB_LINE;
+
 	if (line & (1<<2))
 		PORT(HUB08_LC) |= HUB08_LC_LINE;
 	else
 		PORT(HUB08_LC) &= ~HUB08_LC_LINE;
+
 	if (line & (1<<3))
 		PORT(HUB08_LD) |= HUB08_LD_LINE;
 	else
 		PORT(HUB08_LD) &= ~HUB08_LD_LINE;
+
+	return;
+}
+
+static void hub08LoadLineData()
+{
+	int8_t matr;
+
+	// Switch to new line
+	if (--line < 0)
+		line = 15;
+
+	// Prepare data for new line
+	for (matr = 7; matr >= 0; matr--) {
+		SPDR = fb[line * (HUB08_WIDTH / 8) + matr];	// It takes time to calculate index,
+		//while(!(SPSR & (1<<SPIF)));				// so we can skip reading SPI status
+	}
 
 	return;
 }
@@ -43,115 +61,83 @@ void hub08Init()
 	DDR(HUB08_R1) |= HUB08_R1_LINE;
 	DDR(HUB08_OE) |= HUB08_OE_LINE;
 
-	// Default controls state
-	PORT(HUB08_LA) &= ~HUB08_LA_LINE;
-	PORT(HUB08_LB) &= ~HUB08_LB_LINE;
-	PORT(HUB08_LC) &= ~HUB08_LC_LINE;
-	PORT(HUB08_LD) &= ~HUB08_LD_LINE;
+	TIMSK0 |= (1<<TOIE0);							// Enable timer overflow interrupt
+	TIMSK0 |= (1<<OCIE0A);							// Enable timer compare interrupt
+	TCCR0B |= (0<<CS02) | (1<<CS01) | (0<<CS00);	// Set timer prescaller to 8 (16M/8/256 = 7812.5Hz)
+	OCR0A = 255;
 
-	PORT(HUB08_CLK) &= ~HUB08_CLK_LINE;
-	PORT(HUB08_LAT) &= ~HUB08_LAT_LINE;
-	PORT(HUB08_R1) &= ~HUB08_R1_LINE;
-	PORT(HUB08_OE) |= HUB08_OE_LINE;
-
-	TIMSK0 |= (1<<TOIE0);							/* Enable timer overflow interrupt */
-	TIMSK0 |= (1<<OCIE0A);							/* Enable timer compare interrupt */
-	TCCR0B |= (0<<CS02) | (1<<CS01) | (0<<CS00);	/* Set timer prescaller to 8 (16M/2/256 = 7812.5Hz)*/
-	OCR0A = 140;
+	/* Configure Hardware SPI */
+	SPCR = (1<<SPE) | (1<<MSTR);
+	SPSR = (1<<SPI2X);
 
 	return;
 }
 
-__attribute__((optimize("O3"))) ISR(TIMER0_OVF_vect)
+ISR (TIMER0_OVF_vect)
 {
-	static uint8_t line;
-	uint8_t i;
-	uint8_t *ptr;
-	uint8_t bitmask;
-
-	if (++line >= 16)
-		line = 0;
-
-	// Select buffer
-	if (line < 8)
-		ptr = row0;
-	else
-		ptr = row1;
-	// Select bit for current line
-	bitmask = (1<<(line % 8));
-	for (i = 0; i < HUB08_WIDTH; i++) {
-		// Set data
-		if (*ptr++ & bitmask)
-			PORT(HUB08_R1) |= HUB08_R1_LINE;
-		else
-			PORT(HUB08_R1) &= ~HUB08_R1_LINE;
-		// Strob data
-		PORT(HUB08_CLK) |= HUB08_CLK_LINE;
-		PORT(HUB08_CLK) &= ~HUB08_CLK_LINE;
-	}
-
-	// Select next line
-	hub08SetLine(line);
-
-	// Latch 64 bit for output
+	// Latch current line to buffers
 	PORT(HUB08_LAT) |= HUB08_LAT_LINE;
 	PORT(HUB08_LAT) &= ~HUB08_LAT_LINE;
 
-	// Switch on new line
-	PORT(HUB08_OE) &= ~HUB08_OE_LINE;
+	PORT(HUB08_OE) &= ~HUB08_OE_LINE;				// Switch on current line
+
+	// Prepare new data if there is enough time for this operation
+	if (OCR0A >= 128)
+		hub08LoadLineData();
 
 	return;
 }
 
 ISR (TIMER0_COMPA_vect)
 {
-	// Switch off everything
-	PORT(HUB08_OE) |= HUB08_OE_LINE;
+	PORT(HUB08_OE) |= HUB08_OE_LINE;				// Switch off current line
+
+	// Switch to new line
+	hub08SelectLine();
+
+	// Prepare new data if there is enough time for this operation
+	if (OCR0A < 128)
+		hub08LoadLineData();
 
 	return;
 }
-
 
 void hub08Fill(uint8_t data)
 {
 	uint8_t i;
 
-	for (i = 0; i < HUB08_WIDTH; i++) {
-		row0[i] = data;
-		row1[i] = data;
-	}
+	for (i = 0; i < 128; i++)
+		fb[i] = data;
 
 	return;
 }
 
 void hub08Brighness(uint8_t level)
 {
+	uint8_t brStep = 256 / HUB08_MAX_BRIGNTNESS;
+
 	if (level > HUB08_MAX_BRIGNTNESS)
 		level = HUB08_MAX_BRIGNTNESS;
+
 	if (level) {
-		TIMSK0 |= (1<<TOIE0);							/* Enable timer overflow interrupt */
-		OCR0A = 135 + (level * (level + 1)) / 2;
+		OCR0A = (level - 1) * brStep - 1 + brStep;
+		TIMSK0 |= (1<<TOIE0);						/* Enable timer overflow interrupt */
+		TIMSK0 |= (1<<OCIE0A);						// Enable timer compare interrupt
 	} else {
-		TIMSK0 &= ~(1<<TOIE0);							/* Disable timer overflow interrupt */
+		TIMSK0 &= ~(1<<TOIE0);						/* Disable timer overflow interrupt */
+		TIMSK0 &= ~(1<<OCIE0A);						// Disable timer compare interrupt
+		PORT(HUB08_OE) |= HUB08_OE_LINE;			// Switch off current line
 	}
 
 	return;
 }
 
-void hub08Pixel(uint8_t x, uint8_t y, uint8_t color) {
-	if (color) {
-		if (y < 8) {
-			row0[x] |= (1 << y);
-		} else {
-			row1[x] |= (1 << (y - 8));
-		}
-	} else {
-		if (y < 8) {
-			row0[x] &= ~(1 << y);
-		} else {
-			row1[x] &= ~(1 << (y - 8));
-		}
-	}
+void hub08Pixel(uint8_t x, uint8_t y, uint8_t color)
+{
+	if (color)
+		fb[y * 8 + (7 - x / 8)] |= (0x80 >> (x % 8));
+	else
+		fb[y * 8 + (7 - x / 8)] &= ~(0x80 >> (x % 8));
 
 	return;
 }
