@@ -92,13 +92,13 @@ ISR (TIMER0_COMPA_vect)
 {
 	PORT(HUB08_OE) |= HUB08_OE_LINE;				// Switch off current line
 
-	// Switch to new line
-	hub08SelectLine();
-
 	// Prepare new data if there is enough time for this operation
 	if (OCR0A < 128)
 		hub08LoadLineData();
 
+	// Switch to new line
+
+	hub08SelectLine();
 	return;
 }
 
