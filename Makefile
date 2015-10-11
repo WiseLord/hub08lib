@@ -6,13 +6,15 @@ F_CPU = 16000000
 # Source files
 SRCS = $(wildcard *.c)
 
+CHARSET = -fexec-charset=ks0066-ru
+
 # Build directory
 BUILDDIR = build
 
 # Compiler options
 OPTIMIZE = -Os -mcall-prologues -fshort-enums -ffunction-sections -fdata-sections
 DEBUG = -g -Wall -Werror
-CFLAGS = $(DEBUG) -lm $(OPTIMIZE) -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CFLAGS = $(DEBUG) -lm $(OPTIMIZE) -mmcu=$(MCU) -DF_CPU=$(F_CPU) $(CHARSET)
 CFLAGS += -MMD -MP -MT $(BUILDDIR)/$(*F).o -MF $(BUILDDIR)/$(@F).d
 LDFLAGS = $(DEBUG) -mmcu=$(MCU) -Wl,-gc-sections -mrelax
 

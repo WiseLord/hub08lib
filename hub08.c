@@ -134,10 +134,18 @@ void hub08Brighness(uint8_t level)
 
 void hub08Pixel(uint8_t x, uint8_t y, uint8_t color)
 {
+	uint8_t *pos = &fb[y * 8 + (7 - x / 8)];
+	uint8_t bit = (0x80 >> (x % 8));
+
+	if (x >= HUB08_WIDTH)
+		return;
+	if (y >= HUB08_HEIGHT)
+		return;
+
 	if (color)
-		fb[y * 8 + (7 - x / 8)] |= (0x80 >> (x % 8));
+		*pos |= bit;
 	else
-		fb[y * 8 + (7 - x / 8)] &= ~(0x80 >> (x % 8));
+		*pos &= ~bit;
 
 	return;
 }
