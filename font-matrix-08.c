@@ -137,7 +137,7 @@ const uint8_t font_matrix_08[] PROGMEM = {
 	0x7F,                          // 0x7C => |
 	0x41, 0x36, 0x08,              // 0x7D => }
 	0x08, 0x04, 0x08, 0x04,        // 0x7E => ~
-	0x00,                          // 0x7F =>
+	0x00,                          // 0x7F => <SPACE BETWEEN CHARS>
 
 	//                             // 0x80 =>
 	//                             // 0x81 =>

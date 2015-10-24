@@ -11,12 +11,13 @@ int main(void)
 	sei();
 
 	gdSetBrightness(8);
-	gdLoadFont(font_matrix_08, 1);
+//	gdLoadFont(font_matrix_08, 1);
+	gdLoadFont(font_dosapp103_16, 1);
 
-	hub08Fill(0xFF);
+//	hub08Fill(0xFF);
 	while (1) {
 		gdSetXY(0, 0);
-		gdWriteString("Понедельник");
+		gdWriteString("Hello!");
 	}
 
 	return 0;
