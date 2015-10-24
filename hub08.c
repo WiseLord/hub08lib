@@ -1,10 +1,18 @@
 #include "hub08.h"
 
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+
 #include "pins.h"
 
 static uint8_t fb[HUB08_FB_SIZE];					// Frame buffer
 static int8_t line;									// Current line
+
+static const uint8_t *_fontData;
+static uint8_t _fontHeight;
+static uint8_t _fontColor;
+
+static uint8_t _x, _y;
 
 static void hub08SelectLine(void)
 {
@@ -41,8 +49,9 @@ static void hub08LoadLineData()
 
 	// Prepare data for new line
 	for (matr = 7; matr >= 0; matr--) {
-		SPDR = fb[line * (HUB08_WIDTH / 8) + matr];	// It takes time to calculate index,
-		//while(!(SPSR & (1<<SPIF)));				// so we can skip reading SPI status
+		SPDR = fb[line * (HUB08_WIDTH / 8) + matr];
+		// It takes time to calculate index, so we can skip check SPI status
+		// while(!(SPSR & (1<<SPIF)));
 	}
 
 	return;
@@ -66,7 +75,7 @@ void hub08Init()
 	TCCR0B |= (0<<CS02) | (1<<CS01) | (0<<CS00);	// Set timer prescaller to 8 (16M/8/256 = 7812.5Hz)
 	OCR0A = 255;
 
-	/* Configure Hardware SPI */
+	// Configure Hardware SPI
 	SPCR = (1<<SPE) | (1<<MSTR);
 	SPSR = (1<<SPI2X);
 
@@ -96,9 +105,7 @@ ISR (TIMER0_COMPA_vect)
 	if (OCR0A < 128)
 		hub08LoadLineData();
 
-	// Switch to new line
-
-	hub08SelectLine();
+	hub08SelectLine();								// Switch to new line
 	return;
 }
 
@@ -121,10 +128,10 @@ void hub08Brighness(uint8_t level)
 
 	if (level) {
 		OCR0A = (level - 1) * brStep - 1 + brStep;
-		TIMSK0 |= (1<<TOIE0);						/* Enable timer overflow interrupt */
+		TIMSK0 |= (1<<TOIE0);						// Enable timer overflow interrupt
 		TIMSK0 |= (1<<OCIE0A);						// Enable timer compare interrupt
 	} else {
-		TIMSK0 &= ~(1<<TOIE0);						/* Disable timer overflow interrupt */
+		TIMSK0 &= ~(1<<TOIE0);						// Disable timer overflow interrupt
 		TIMSK0 &= ~(1<<OCIE0A);						// Disable timer compare interrupt
 		PORT(HUB08_OE) |= HUB08_OE_LINE;			// Switch off current line
 	}
@@ -146,6 +153,69 @@ void hub08Pixel(uint8_t x, uint8_t y, uint8_t color)
 		*pos |= bit;
 	else
 		*pos &= ~bit;
+
+	return;
+}
+
+void hub08SetXY(uint8_t x, uint8_t y)
+{
+	_x = x;
+	_y = y;
+
+	return;
+}
+
+
+void hub08SetFont(const uint8_t *font, uint8_t color)
+{
+	_fontHeight = pgm_read_byte(&font[FONT_HEIGHT]);
+	_fontData = font + FONT_DATA;
+	_fontColor = color;
+}
+
+void hub08WriteChar(uint8_t code)
+{
+	uint8_t i, j, k;
+
+	uint8_t pgmData;
+	uint16_t oft = 0;	// Current symbol offset in array
+	uint8_t swd = 0;	// Current symbol width
+
+	code -= ' ';
+
+	// Calculate symbol offset in array and find symbol width
+	for (i = 0; i < code; i++) {
+		swd = pgm_read_byte(_fontData + i);
+		oft += swd;
+	}
+	swd = pgm_read_byte(_fontData + code);
+
+	oft *= (_fontHeight + 7) / 8;
+	oft += (256 - ' ');
+
+	// Draw symbol
+	for (j = 0; j < (_fontHeight + 7) / 8; j++) {
+		for (i = 0; i < swd; i++) {
+			pgmData = pgm_read_byte(_fontData + oft + (swd * j) + i);
+			if (!_fontColor)
+				pgmData = ~pgmData;
+			for (k = 0; k < 8; k++)
+				hub08Pixel(_x + i, _y + (8 * j + k), pgmData & (1<<k));
+		}
+	}
+	hub08SetXY(_x + swd, _y);
+
+	return;
+}
+
+void hub08WriteString(char *string)
+{
+	if (*string)
+		hub08WriteChar(*string++);
+	while(*string) {
+		hub08WriteChar(0x7F);
+		hub08WriteChar(*string++);
+	}
 
 	return;
 }
