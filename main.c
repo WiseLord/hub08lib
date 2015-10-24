@@ -10,12 +10,13 @@ int main(void)
 	gdInit();
 	sei();
 
-	gdSetBrightness(16);
-	gdLoadFont(font_ks0066_ru_16, 1);
+	gdSetBrightness(8);
+	gdLoadFont(font_matrix_08, 1);
 
+	hub08Fill(0xFF);
 	while (1) {
 		gdSetXY(0, 0);
-		gdWriteString("ХЛЫЩИ");
+		gdWriteString("Понедельник");
 	}
 
 	return 0;

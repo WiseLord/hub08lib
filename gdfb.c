@@ -3,8 +3,9 @@
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
 
-const uint8_t *_font;
-static uint8_t fp[FONT_PARAM_COUNT];
+static const uint8_t *_fontData;
+static uint8_t _fontHeight;
+static uint8_t _fontColor;
 
 static uint8_t _x, _y;
 
@@ -184,12 +185,9 @@ uint8_t gdGetX(void)
 
 void gdLoadFont(const uint8_t *font, uint8_t color)
 {
-	uint8_t i;
-
-	_font = font + 5;
-	for (i = 0; i < FONT_PARAM_COUNT - 1; i++)
-		fp[i] = pgm_read_byte(font + i);
-	fp[FONT_COLOR] = color;
+	_fontHeight = pgm_read_byte(&font[FONT_HEIGHT]);
+	_fontData = font + FONT_DATA;
+	_fontColor = color;
 }
 
 void gdWriteChar(uint8_t code)
@@ -200,24 +198,24 @@ void gdWriteChar(uint8_t code)
 
 	uint8_t pgmData;
 
-	uint8_t spos = code - ((code >= 128) ? fp[FONT_OFTNA] : fp[FONT_OFTA]);
+	uint8_t spos = code - ' ';
 
 	uint16_t oft = 0;	/* Current symbol offset in array*/
 	uint8_t swd = 0;	/* Current symbol width */
 
 	for (i = 0; i < spos; i++) {
-		swd = pgm_read_byte(_font + i);
+		swd = pgm_read_byte(_fontData + i);
 		oft += swd;
 	}
-	swd = pgm_read_byte(_font + spos);
+	swd = pgm_read_byte(_fontData + spos);
 
-	oft *= fp[FONT_HEIGHT];
-	oft += fp[FONT_CCNT];
+	oft *= (_fontHeight + 7) / 8;
+	oft += (256 - ' ');
 
-	for (j = 0; j < fp[FONT_HEIGHT]; j++) {
+	for (j = 0; j < (_fontHeight + 7) / 8; j++) {
 		for (i = 0; i < swd; i++) {
-			pgmData = pgm_read_byte(_font + oft + (swd * j) + i);
-			if (!fp[FONT_COLOR])
+			pgmData = pgm_read_byte(_fontData + oft + (swd * j) + i);
+			if (!_fontColor)
 				pgmData = ~pgmData;
 			for (k = 0; k < 8; k++)
 				gdDrawPixel(_x + i, _y + (8 * j + k), pgmData & (1<<k));
@@ -233,9 +231,8 @@ void gdWriteString(char *string)
 	if (*string)
 		gdWriteChar(*string++);
 	while(*string) {
-		gdWriteChar(fp[FONT_LTSPPOS]);
+		gdWriteChar(0x7F);
 		gdWriteChar(*string++);
 	}
-
 	return;
 }

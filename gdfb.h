@@ -3,23 +3,10 @@
 
 #include "hub08.h"
 
-#define GD_MIN_BRIGHTNESS			ST7920_MIN_BRIGHTNESS
-#define GD_MAX_BRIGHTNESS			ST7920_MAX_BRIGHTNESS
-
 #define GD_SIZE_X					HUB08_WIDTH
 #define GD_SIZE_Y					HUB08_HEIGHT
 
 #include "fonts.h"
-
-#define FONT_PARAM_COUNT			6
-enum {
-	FONT_HEIGHT,
-	FONT_LTSPPOS,
-	FONT_CCNT,
-	FONT_OFTA,
-	FONT_OFTNA,
-	FONT_COLOR,
-};
 
 inline void gdInit(void);
 inline void gdClear(void);

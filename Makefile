@@ -6,7 +6,7 @@ F_CPU = 16000000
 # Source files
 SRCS = $(wildcard *.c)
 
-CHARSET = -fexec-charset=ks0066-ru
+CHARSET = -fexec-charset=cp1251
 
 # Build directory
 BUILDDIR = build
