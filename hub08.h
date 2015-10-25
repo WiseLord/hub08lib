@@ -21,4 +21,6 @@ void hub08SetFont(const uint8_t *font, uint8_t color);
 void hub08WriteChar(uint8_t code);
 void hub08WriteString(char *string);
 
+void hub08Scroll(uint16_t data);
+
 #endif // HUB08_H

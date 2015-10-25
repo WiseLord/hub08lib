@@ -219,3 +219,21 @@ void hub08WriteString(char *string)
 
 	return;
 }
+
+void hub08Scroll(uint16_t data)
+{
+	int8_t i, j;
+	uint8_t *buf;
+
+	buf = &fb[HUB08_FB_SIZE - 1];
+	for (j = 15; j >= 0; j--) {
+		for (i = 7; i >= 0; i--) {
+			*buf <<= 1;
+			if (i ? *(buf - 1) & 0x80 : data & (1 << j))
+				*buf |= 0x01;
+			buf--;
+		}
+	}
+
+	return;
+}

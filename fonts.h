@@ -10,6 +10,7 @@ enum {
 };
 
 extern const uint8_t font_matrix_08[];
+extern const uint8_t font_matrix_16[];
 extern const uint8_t font_dosapp103_16[];
 
 #endif /* FONTS_H */
