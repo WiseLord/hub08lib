@@ -2,11 +2,13 @@
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 
 #include "pins.h"
 
 static uint8_t fb[HUB08_FB_SIZE];					// Frame buffer
 static int8_t line;									// Current line
+static uint16_t charBuf[11];						// Big char buffer
 
 static const uint8_t *_fontData;
 static uint8_t _fontHeight;
@@ -157,6 +159,15 @@ void hub08Pixel(uint8_t x, uint8_t y, uint8_t color)
 	return;
 }
 
+void hub08Column(uint8_t x, uint16_t data) {
+	int8_t k;
+
+	for (k = 0; k < 16; k++)
+		hub08Pixel(x, _y + k, (data & (1<<k)) != 0);
+
+	return;
+}
+
 void hub08SetXY(uint8_t x, uint8_t y)
 {
 	_x = x;
@@ -173,13 +184,16 @@ void hub08SetFont(const uint8_t *font, uint8_t color)
 	_fontColor = color;
 }
 
-void hub08WriteChar(uint8_t code)
+uint8_t hub08ReadChar(uint8_t code)
 {
-	uint8_t i, j, k;
+	uint8_t i;
+	int j;
 
-	uint8_t pgmData;
+	uint8_t pgmData = 0;
 	uint16_t oft = 0;	// Current symbol offset in array
 	uint8_t swd = 0;	// Current symbol width
+
+	uint16_t data = 0;
 
 	code -= ' ';
 
@@ -193,28 +207,47 @@ void hub08WriteChar(uint8_t code)
 	oft *= (_fontHeight + 7) / 8;
 	oft += (256 - ' ');
 
-	// Draw symbol
-	for (j = 0; j < (_fontHeight + 7) / 8; j++) {
-		for (i = 0; i < swd; i++) {
+	for (i = 0; i < swd; i++) {
+		data = 0;
+		for (j = (_fontHeight - 1) / 8; j >= 0; j--) {
+			data <<= 8;
 			pgmData = pgm_read_byte(_fontData + oft + (swd * j) + i);
 			if (!_fontColor)
 				pgmData = ~pgmData;
-			for (k = 0; k < 8; k++)
-				hub08Pixel(_x + i, _y + (8 * j + k), pgmData & (1<<k));
+			data |= pgmData;
 		}
+		charBuf[i] = data;
 	}
-	hub08SetXY(_x + swd, _y);
+
+	return swd;
+}
+
+void hub08WriteChar(uint8_t code, uint8_t mode)
+{
+	uint8_t i;
+	uint8_t swd = hub08ReadChar(code);
+
+	if (mode == OUT_MODE_SCROLL) {
+		for (i = 0; i < swd; i++) {
+			hub08Scroll(charBuf[i]);
+			_delay_ms(15);
+		}
+	} else {
+		for (i = 0; i < swd; i++)
+			hub08Column(_x + i, charBuf[i]);
+		hub08SetXY(_x + swd, _y);
+	}
 
 	return;
 }
 
-void hub08WriteString(char *string)
+void hub08WriteString(char *string, uint8_t mode)
 {
 	if (*string)
-		hub08WriteChar(*string++);
+		hub08WriteChar(*string++, mode);
 	while(*string) {
-		hub08WriteChar(0x7F);
-		hub08WriteChar(*string++);
+		hub08WriteChar(0x7F, mode);
+		hub08WriteChar(*string++, mode);
 	}
 
 	return;
@@ -237,3 +270,4 @@ void hub08Scroll(uint16_t data)
 
 	return;
 }
+

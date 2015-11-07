@@ -16,22 +16,14 @@ int main(void)
 	hub08Brighness(8);
 	hub08SetFont(font, 1);
 
-	int16_t i, j;
-
+	hub08Fill(0x00);
 	while (1) {
-		j = 0;
-		for (i = 0x20; i < 0x100; i++) {
-			if (++j >= 5) {
-				j = 0;
-				hub08Fill(0x00);
-				hub08SetXY(0, 0);
-			}
-			hub08WriteChar(i);
-			hub08WriteChar(0x7F);
-			if (pgm_read_byte(&font_matrix_16[i - 0x20 + 1]) > 0x01) {
-				_delay_ms(300);
-			}
-		}
+		hub08Fill(0x00);
+		hub08SetXY(0, 0);
+		hub08WriteString("Тест", OUT_MODE_FIXED);
+		_delay_ms(500);
+		hub08WriteString("Проверка скроллирования", OUT_MODE_SCROLL);
+		_delay_ms(500);
 	}
 
 	return 0;
