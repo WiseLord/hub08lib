@@ -3,15 +3,16 @@
 
 #include "hub08.h"
 
-#define MATRIX_WIDTH		HUB08_WIDTH
-#define MATRIX_HEIGHT		HUB08_HEIGHT
-#define MATRIX_FB_SIZE		HUB08_FB_SIZE
+#define MATRIX_WIDTH        HUB08_WIDTH
+#define MATRIX_HEIGHT       HUB08_HEIGHT
+#define MATRIX_FB_SIZE      HUB08_FB_SIZE
+#define MATRIX_MAX_BR       HUB08_MAX_BR
 
 enum {
-	OUT_MODE_FIXED,
-	OUT_MODE_SCROLL,
+  OUT_MODE_FIXED,
+  OUT_MODE_SCROLL,
 
-	OUT_MODE_END
+  OUT_MODE_END
 };
 
 void matrixInit(void);

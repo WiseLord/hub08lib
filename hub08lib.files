@@ -1,5 +1,5 @@
+.astylerc
 arduino.h
-font-dosapp103-16.c
 font-matrix-08.c
 font-matrix-16.c
 fonts.h

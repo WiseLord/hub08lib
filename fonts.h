@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 enum {
-	FONT_HEIGHT,
+  FONT_HEIGHT,
 
-	FONT_DATA,
+  FONT_DATA,
 };
 
 extern const uint8_t font_matrix_08[];
