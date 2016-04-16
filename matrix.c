@@ -8,9 +8,9 @@ static uint8_t _fontHeight;
 static uint8_t _fontColor;
 
 static uint8_t _x, _y;
-static uint16_t charBuf[11];                        // Big char buffer
+static uint16_t charBuf[MATRIX_CHAR_MAX_WIDTH];
 
-static uint8_t *fb;                                 // Frame buffer
+static uint8_t *fb;
 
 static uint8_t matrixReadChar(uint8_t code)
 {
@@ -55,9 +55,9 @@ void matrixInit()
   fb = hub08Init();
 }
 
-void matrixBrightness(uint8_t level)
+void matrixSetBr(uint8_t level)
 {
-  hub08Brighness(level);
+  hub08SetBr(level);
 }
 
 void matrixSetFont(const uint8_t *font, uint8_t color)
@@ -75,12 +75,11 @@ void matrixSetPos(uint8_t x, uint8_t y)
   return;
 }
 
-
-void matrixFIll(uint8_t data)
+void matrixFill(uint8_t data)
 {
   uint8_t i;
 
-  for (i = 0; i < 128; i++)
+  for (i = 0; i < MATRIX_FB_SIZE; i++)
     fb[i] = data;
 
   return;

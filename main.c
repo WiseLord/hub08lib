@@ -13,12 +13,12 @@ int main(void)
 
   const uint8_t *font = font_matrix_16;
 
-  matrixBrightness(8);
+  matrixSetBr(16);
   matrixSetFont(font, 1);
 
-  matrixFIll(0x00);
+  matrixFill(0x00);
   while (1) {
-    matrixFIll(0x00);
+    matrixFill(0x00);
     matrixSetPos(0, 0);
     matrixWriteString("Тест", OUT_MODE_FIXED);
     _delay_ms(500);

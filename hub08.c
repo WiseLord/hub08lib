@@ -103,9 +103,9 @@ ISR (TIMER0_COMPA_vect)
   return;
 }
 
-void hub08Brighness(uint8_t level)
+void hub08SetBr(uint8_t level)
 {
-  uint8_t brStep = 256 / HUB08_MAX_BR;
+  uint8_t brStep = 128 / HUB08_MAX_BR;
 
   if (level > HUB08_MAX_BR)
     level = HUB08_MAX_BR;

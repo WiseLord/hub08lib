@@ -8,9 +8,9 @@
 #define HUB08_HEIGHT            16
 #define HUB08_FB_SIZE           (HUB08_WIDTH / 8 * 16)
 
-#define HUB08_MAX_BR            32
+#define HUB08_MAX_BR            16
 
 uint8_t *hub08Init(void);
-void hub08Brighness(uint8_t level);
+void hub08SetBr(uint8_t level);
 
 #endif // HUB08_H
