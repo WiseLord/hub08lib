@@ -10,4 +10,3 @@ echo
 echo "Program:  $(($text + $data)) bytes (.text + .data)"
 echo "Data:     $(($data + $bss)) bytes (.data + .bss)"
 echo
-

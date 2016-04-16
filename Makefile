@@ -1,37 +1,42 @@
-TARG = hub08lib
+# Output file name
+TARG     = hub08lib
 
-MCU = atmega32u4
-F_CPU = 16000000
+# MCU name and frequency
+MCU      = atmega32u4
+F_CPU    = 16000000
 
 # Source files
-SRCS = $(wildcard *.c)
-
-CHARSET = -fexec-charset=cp1251
+SRCS     = $(wildcard *.c)
 
 # Build directory
 BUILDDIR = build
 
 # Compiler options
 OPTIMIZE = -Os -mcall-prologues -fshort-enums -ffunction-sections -fdata-sections
-DEBUG = -g -Wall -Werror
-CFLAGS = $(DEBUG) -lm $(OPTIMIZE) -mmcu=$(MCU) -DF_CPU=$(F_CPU) $(CHARSET)
-CFLAGS += -MMD -MP -MT $(BUILDDIR)/$(*F).o -MF $(BUILDDIR)/$(@F).d
-LDFLAGS = $(DEBUG) -mmcu=$(MCU) -Wl,-gc-sections -mrelax
+DEBUG    = -g -Wall -Werror
+DEPS     = -MMD -MP -MT $(BUILDDIR)/$(*F).o -MF $(BUILDDIR)/$(*D)/$(*F).d
+CFLAGS   = $(DEBUG) -lm $(OPTIMIZE) $(DEPS) -mmcu=$(MCU) -DF_CPU=$(F_CPU) -fexec-charset=cp1251
+LDFLAGS  = $(DEBUG) -mmcu=$(MCU) -Wl,-gc-sections -mrelax
 
 # AVR toolchain and flasher
 CC       = avr-gcc
 OBJCOPY  = avr-objcopy
 OBJDUMP  = avr-objdump
 
+# AVRDude parameters
 AVRDUDE  = avrdude
-AD_MCU = -p $(MCU)
-#AD_PROG = -c avr109
-#AD_PORT = -P /dev/ttyACM3
+AD_MCU   = -p $(MCU)
+#AD_PROG = -c stk500v2
+#AD_PORT = -P avrdoper
 
-AD_CMDLINE = $(AD_MCU) $(AD_PROG) $(AD_PORT) -V
+AD_CMD   = $(AD_MCU) $(AD_PROG) $(AD_PORT) -V
 
-OBJS = $(addprefix $(BUILDDIR)/, $(SRCS:.c=.o))
-ELF = $(BUILDDIR)/$(TARG).elf
+# Build objects
+OBJS     = $(addprefix $(BUILDDIR)/, $(SRCS:.c=.o))
+ELF      = $(BUILDDIR)/$(TARG).elf
+
+# Dependencies
+-include $(OBJS:.o=.d)
 
 all: $(ELF) size
 
@@ -54,12 +59,8 @@ clean:
 
 .PHONY: flash
 flash: $(ELF)
-	$(AVRDUDE) $(AD_CMDLINE) -U flash:w:flash/$(TARG).hex:i
+	$(AVRDUDE) $(AD_CMD) -U flash:w:flash/$(TARG).hex:i
 
 .PHONY: fuse
 fuse:
-	$(AVRDUDE) $(AD_CMDLINE) -U lfuse:w:0xff:m -U hfuse:w:0xd8:m -U efuse:w:0xCB:m
-
-# Other dependencies
--include $(wildcard $(BUILDDIR)/*.d)
-
+	$(AVRDUDE) $(AD_CMD) -U lfuse:w:0xff:m -U hfuse:w:0xd8:m -U efuse:w:0xCB:m
