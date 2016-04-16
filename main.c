@@ -4,25 +4,25 @@
 #include <util/delay.h>
 
 #include "pins.h"
-#include "hub08.h"
+#include "matrix.h"
 
 int main(void)
 {
-	hub08Init();
+	matrixInit();
 	sei();
 
 	const uint8_t *font = font_matrix_16;
 
-	hub08Brighness(8);
-	hub08SetFont(font, 1);
+	matrixBrightness(8);
+	matrixSetFont(font, 1);
 
-	hub08Fill(0x00);
+	matrixFIll(0x00);
 	while (1) {
-		hub08Fill(0x00);
-		hub08SetXY(0, 0);
-		hub08WriteString("Тест", OUT_MODE_FIXED);
+		matrixFIll(0x00);
+		matrixSetPos(0, 0);
+		matrixWriteString("Тест", OUT_MODE_FIXED);
 		_delay_ms(500);
-		hub08WriteString("Проверка скроллирования", OUT_MODE_SCROLL);
+		matrixWriteString("Проверка скроллирования", OUT_MODE_SCROLL);
 		_delay_ms(500);
 	}
 

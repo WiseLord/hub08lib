@@ -1,20 +1,11 @@
 #include "hub08.h"
 
 #include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-#include <util/delay.h>
 
 #include "pins.h"
 
 static uint8_t fb[HUB08_FB_SIZE];					// Frame buffer
 static int8_t line;									// Current line
-static uint16_t charBuf[11];						// Big char buffer
-
-static const uint8_t *_fontData;
-static uint8_t _fontHeight;
-static uint8_t _fontColor;
-
-static uint8_t _x, _y;
 
 static void hub08SelectLine(void)
 {
@@ -59,7 +50,7 @@ static void hub08LoadLineData()
 	return;
 }
 
-void hub08Init()
+uint8_t *hub08Init()
 {
 	// Init all lines as outputs
 	DDR(HUB08_LA) |= HUB08_LA_LINE;
@@ -81,7 +72,7 @@ void hub08Init()
 	SPCR = (1<<SPE) | (1<<MSTR);
 	SPSR = (1<<SPI2X);
 
-	return;
+	return fb;
 }
 
 ISR (TIMER0_OVF_vect)
@@ -111,16 +102,6 @@ ISR (TIMER0_COMPA_vect)
 	return;
 }
 
-void hub08Fill(uint8_t data)
-{
-	uint8_t i;
-
-	for (i = 0; i < 128; i++)
-		fb[i] = data;
-
-	return;
-}
-
 void hub08Brighness(uint8_t level)
 {
 	uint8_t brStep = 256 / HUB08_MAX_BRIGNTNESS;
@@ -140,134 +121,3 @@ void hub08Brighness(uint8_t level)
 
 	return;
 }
-
-void hub08Pixel(uint8_t x, uint8_t y, uint8_t color)
-{
-	uint8_t *pos = &fb[y * 8 + (7 - x / 8)];
-	uint8_t bit = (0x80 >> (x % 8));
-
-	if (x >= HUB08_WIDTH)
-		return;
-	if (y >= HUB08_HEIGHT)
-		return;
-
-	if (color)
-		*pos |= bit;
-	else
-		*pos &= ~bit;
-
-	return;
-}
-
-void hub08Column(uint8_t x, uint16_t data) {
-	int8_t k;
-
-	for (k = 0; k < 16; k++)
-		hub08Pixel(x, _y + k, (data & (1<<k)) != 0);
-
-	return;
-}
-
-void hub08SetXY(uint8_t x, uint8_t y)
-{
-	_x = x;
-	_y = y;
-
-	return;
-}
-
-
-void hub08SetFont(const uint8_t *font, uint8_t color)
-{
-	_fontHeight = pgm_read_byte(&font[FONT_HEIGHT]);
-	_fontData = font + FONT_DATA;
-	_fontColor = color;
-}
-
-uint8_t hub08ReadChar(uint8_t code)
-{
-	uint8_t i;
-	int j;
-
-	uint8_t pgmData = 0;
-	uint16_t oft = 0;	// Current symbol offset in array
-	uint8_t swd = 0;	// Current symbol width
-
-	uint16_t data = 0;
-
-	code -= ' ';
-
-	// Calculate symbol offset in array and find symbol width
-	for (i = 0; i < code; i++) {
-		swd = pgm_read_byte(_fontData + i);
-		oft += swd;
-	}
-	swd = pgm_read_byte(_fontData + code);
-
-	oft *= (_fontHeight + 7) / 8;
-	oft += (256 - ' ');
-
-	for (i = 0; i < swd; i++) {
-		data = 0;
-		for (j = (_fontHeight - 1) / 8; j >= 0; j--) {
-			data <<= 8;
-			pgmData = pgm_read_byte(_fontData + oft + (swd * j) + i);
-			if (!_fontColor)
-				pgmData = ~pgmData;
-			data |= pgmData;
-		}
-		charBuf[i] = data;
-	}
-
-	return swd;
-}
-
-void hub08WriteChar(uint8_t code, uint8_t mode)
-{
-	uint8_t i;
-	uint8_t swd = hub08ReadChar(code);
-
-	if (mode == OUT_MODE_SCROLL) {
-		for (i = 0; i < swd; i++) {
-			hub08Scroll(charBuf[i]);
-			_delay_ms(15);
-		}
-	} else {
-		for (i = 0; i < swd; i++)
-			hub08Column(_x + i, charBuf[i]);
-		hub08SetXY(_x + swd, _y);
-	}
-
-	return;
-}
-
-void hub08WriteString(char *string, uint8_t mode)
-{
-	if (*string)
-		hub08WriteChar(*string++, mode);
-	while(*string) {
-		hub08WriteChar(0x7F, mode);
-		hub08WriteChar(*string++, mode);
-	}
-
-	return;
-}
-
-void hub08Scroll(uint16_t data)
-{
-	int8_t i, j;
-	uint8_t *buf;
-
-	buf = &fb[HUB08_FB_SIZE - 1];
-	for (j = 15; j >= 0; j--) {
-		for (i = 7; i >= 0; i--) {
-			*buf <<= 1;
-			if (i ? *(buf - 1) & 0x80 : data & (1 << j))
-				*buf |= 0x01;
-			buf--;
-		}
-	}
-
-	return;
-}
-
