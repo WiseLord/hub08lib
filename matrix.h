@@ -18,8 +18,9 @@ enum {
 };
 
 enum {
-  MATRIX_SCROLL_OFF = 0,
-  MATRIX_SCROLL_ON,
+  SCROLL_START,
+  SCROLL_DRAW,
+  SCROLL_STOP
 };
 
 void matrixInit(void);

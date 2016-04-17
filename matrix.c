@@ -10,7 +10,7 @@ static char strBuf[MATRIX_STRING_MAX_LENGTH];
 static char *strPtr = strBuf;
 static uint16_t charBuf[MATRIX_CHAR_MAX_WIDTH];
 
-static volatile uint8_t scrollMode = MATRIX_SCROLL_OFF;
+static volatile uint8_t scroll = SCROLL_STOP;
 
 static uint8_t matrixReadChar(uint8_t code)
 {
@@ -54,26 +54,27 @@ static uint8_t matrixReadChar(uint8_t code)
   return swd + font.space;
 }
 
-
-
 ISR (TIMER3_OVF_vect)
 {
-  static uint8_t chLen = 0;
-  static uint8_t chCol = 0;
+  static uint8_t swd; // symbol width
+  static uint8_t col; // current symbol column
 
-  if (scrollMode == MATRIX_SCROLL_ON) {
-    if (chCol == 0)
-      chLen = matrixReadChar(*strPtr);
-    if (chCol >= chLen) {
-      chCol = 0;
-      strPtr++;
-      if (*strPtr == 0) {
-        matrixScroll(MATRIX_SCROLL_OFF);
-        return;
-      }
-      chLen = matrixReadChar(*strPtr);
+  if (scroll == SCROLL_START) {
+    col = 0;
+    if (*strPtr) {
+      swd = matrixReadChar(*strPtr);
+      scroll = SCROLL_DRAW;
+    } else {
+      scroll = SCROLL_STOP;
     }
-    matrixShift(charBuf[chCol++]);
+  }
+
+  if (scroll == SCROLL_DRAW) {
+    matrixShift(charBuf[col]);
+    if (++col >= swd) {
+      strPtr++;
+      scroll = SCROLL_START;
+    }
   }
 
   return;
@@ -136,6 +137,7 @@ void matrixShift(uint16_t data)
 
 void matrixLoadString(char *str)
 {
+  scroll = SCROLL_STOP;
   while (*str)
     *strPtr++ = *str++;
   *strPtr = 0;
@@ -146,7 +148,7 @@ void matrixLoadString(char *str)
 void matrixScroll(uint8_t mode)
 {
   strPtr = strBuf;
-  scrollMode = mode;
+  scroll = mode;
 
   return;
 }

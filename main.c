@@ -22,8 +22,8 @@ int main(void)
     matrixLoadString("Test");
     matrixLoadString(" scrolling");
     matrixLoadString(" screen");
-    matrixScroll(MATRIX_SCROLL_ON);
-    _delay_ms(8000);
+    matrixScroll(SCROLL_START);
+    _delay_ms(2000);
   }
 
   return 0;
