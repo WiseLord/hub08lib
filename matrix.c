@@ -1,16 +1,16 @@
 #include "matrix.h"
 
 #include <avr/pgmspace.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 
-static const uint8_t *_fontData;
-static uint8_t _fontHeight;
-static uint8_t _fontColor;
+Font font;
 
-static uint8_t _x, _y;
+static char strBuf[MATRIX_STRING_MAX_LENGTH];
+static char *strPtr = strBuf;
 static uint16_t charBuf[MATRIX_CHAR_MAX_WIDTH];
 
-static uint8_t *fb;
+static volatile uint8_t scrollMode = MATRIX_SCROLL_OFF;
 
 static uint8_t matrixReadChar(uint8_t code)
 {
@@ -27,32 +27,63 @@ static uint8_t matrixReadChar(uint8_t code)
 
   // Calculate symbol offset in array and find symbol width
   for (i = 0; i < code; i++) {
-    swd = pgm_read_byte(_fontData + i);
+    swd = pgm_read_byte(font.data + i);
     oft += swd;
   }
-  swd = pgm_read_byte(_fontData + code);
+  swd = pgm_read_byte(font.data + code);
 
-  oft *= (_fontHeight + 7) / 8;
+  oft *= (font.height + 7) / 8;
   oft += (256 - ' ');
 
-  for (i = 0; i < swd; i++) {
-    data = 0;
-    for (j = (_fontHeight - 1) / 8; j >= 0; j--) {
-      data <<= 8;
-      pgmData = pgm_read_byte(_fontData + oft + (swd * j) + i);
-      if (!_fontColor)
-        pgmData = ~pgmData;
-      data |= pgmData;
+  for (i = 0; i < swd + font.space; i++) {
+    if (i < swd) {
+      data = 0;
+      for (j = (font.height - 1) / 8; j >= 0; j--) {
+        data <<= 8;
+        pgmData = pgm_read_byte(font.data + oft + (swd * j) + i);
+        data |= pgmData;
+      }
+    } else {
+      data = 0;
     }
+    if (!font.color)
+      data = ~data;
     charBuf[i] = data;
   }
 
-  return swd;
+  return swd + font.space;
 }
 
-void matrixInit()
+
+
+ISR (TIMER3_OVF_vect)
 {
-  fb = hub08Init();
+  static uint8_t chLen = 0;
+  static uint8_t chCol = 0;
+
+  if (scrollMode == MATRIX_SCROLL_ON) {
+    if (chCol == 0)
+      chLen = matrixReadChar(*strPtr);
+    if (chCol >= chLen) {
+      chCol = 0;
+      strPtr++;
+      if (*strPtr == 0) {
+        matrixScroll(MATRIX_SCROLL_OFF);
+        return;
+      }
+      chLen = matrixReadChar(*strPtr);
+    }
+    matrixShift(charBuf[chCol++]);
+  }
+
+  return;
+}
+
+void matrixInit(void)
+{
+  hub08Init();
+  TIMSK3 = (1 << TOIE3);
+  TCCR3B |= (0 << CS32) | (1 << CS31) | (0 << CS30);
 }
 
 void matrixSetBr(uint8_t level)
@@ -60,45 +91,28 @@ void matrixSetBr(uint8_t level)
   hub08SetBr(level);
 }
 
-void matrixSetFont(const uint8_t *font, uint8_t color)
+void matrixSetFont(const uint8_t *fnt, uint8_t color)
 {
-  _fontHeight = pgm_read_byte(&font[FONT_HEIGHT]);
-  _fontData = font + FONT_DATA;
-  _fontColor = color;
+  font.height = pgm_read_byte(&fnt[FONT_HEIGHT]);
+  font.space = pgm_read_byte(&fnt[FONT_SPACE]);
+  font.data = fnt + FONT_DATA;
+  font.color = color;
 }
 
-void matrixSetPos(uint8_t x, uint8_t y)
+
+void matrixClear(void)
 {
-  _x = x;
-  _y = y;
-
-  return;
-}
-
-void matrixFill(uint8_t data)
-{
-  uint8_t i;
-
-  for (i = 0; i < MATRIX_FB_SIZE; i++)
-    fb[i] = data;
+  hub08Clear();
 
   return;
 }
 
 void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color)
 {
-  uint8_t *pos = &fb[y * 8 + (7 - x / 8)];
-  uint8_t bit = (0x80 >> (x % 8));
-
-  if (x >= MATRIX_WIDTH)
-    return;
-  if (y >= MATRIX_HEIGHT)
+  if (x >= MATRIX_WIDTH || y >= MATRIX_HEIGHT)
     return;
 
-  if (color)
-    *pos |= bit;
-  else
-    *pos &= ~bit;
+  hub08DrawPixel(x, y, color);
 
   return;
 }
@@ -108,58 +122,31 @@ void matrixDrawColumn(uint8_t x, uint16_t data)
   int8_t k;
 
   for (k = 0; k < 16; k++)
-    matrixDrawPixel(x, _y + k, (data & (1 << k)) != 0);
+    matrixDrawPixel(x, k, (data & (1 << k)) != 0);
 
   return;
 }
 
-
-void matrixWriteChar(uint8_t code, uint8_t mode)
+void matrixShift(uint16_t data)
 {
-  uint8_t i;
-  uint8_t swd = matrixReadChar(code);
-
-  if (mode == OUT_MODE_SCROLL) {
-    for (i = 0; i < swd; i++) {
-      matrixScroll(charBuf[i]);
-      _delay_ms(15);
-    }
-  } else {
-    for (i = 0; i < swd; i++)
-      matrixDrawColumn(_x + i, charBuf[i]);
-    matrixSetPos(_x + swd, _y);
-  }
+  hub08Shift(data);
 
   return;
 }
 
-void matrixWriteString(char *string, uint8_t mode)
+void matrixLoadString(char *str)
 {
-  if (*string)
-    matrixWriteChar(*string++, mode);
-  while (*string) {
-    matrixWriteChar(0x7F, mode);
-    matrixWriteChar(*string++, mode);
-  }
+  while (*str)
+    *strPtr++ = *str++;
+  *strPtr = 0;
 
   return;
 }
 
-void matrixScroll(uint16_t data)
+void matrixScroll(uint8_t mode)
 {
-  int8_t i, j;
-  uint8_t *buf;
-
-  buf = &fb[MATRIX_FB_SIZE - 1];
-  for (j = 15; j >= 0; j--) {
-    for (i = 7; i >= 0; i--) {
-      *buf <<= 1;
-      if (i ? * (buf - 1) & 0x80 : data & (1 << j))
-        *buf |= 0x01;
-      buf--;
-    }
-  }
+  strPtr = strBuf;
+  scrollMode = mode;
 
   return;
 }
-

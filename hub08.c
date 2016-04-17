@@ -32,7 +32,7 @@ static void hub08SelectLine(void)
   return;
 }
 
-static void hub08LoadLineData()
+static void hub08LoadLineData(void)
 {
   int8_t matr;
 
@@ -48,32 +48,6 @@ static void hub08LoadLineData()
   }
 
   return;
-}
-
-uint8_t *hub08Init()
-{
-  // Init all lines as outputs
-  DDR(HUB08_LA) |= HUB08_LA_LINE;
-  DDR(HUB08_LB) |= HUB08_LB_LINE;
-  DDR(HUB08_LC) |= HUB08_LC_LINE;
-  DDR(HUB08_LD) |= HUB08_LD_LINE;
-
-  DDR(HUB08_CLK) |= HUB08_CLK_LINE;
-  DDR(HUB08_LAT) |= HUB08_LAT_LINE;
-  DDR(HUB08_R1) |= HUB08_R1_LINE;
-  DDR(HUB08_OE) |= HUB08_OE_LINE;
-
-  TIMSK0 |= (1 << TOIE0);                         // Enable timer overflow interrupt
-  TIMSK0 |= (1 << OCIE0A);                        // Enable timer compare interrupt
-  TCCR0B |= (0 << CS02) | (1 << CS01) | (0 <<
-                                         CS00);   // Set timer prescaller to 8 (16M/8/256 = 7812.5Hz)
-  OCR0A = 255;
-
-  // Configure Hardware SPI
-  SPCR = (1 << SPE) | (1 << MSTR);
-  SPSR = (1 << SPI2X);
-
-  return fb;
 }
 
 ISR (TIMER0_OVF_vect)
@@ -100,6 +74,43 @@ ISR (TIMER0_COMPA_vect)
     hub08LoadLineData();
 
   hub08SelectLine();                              // Switch to new line
+
+  return;
+}
+
+void hub08Init(void)
+{
+  // Init all lines as outputs
+  DDR(HUB08_LA) |= HUB08_LA_LINE;
+  DDR(HUB08_LB) |= HUB08_LB_LINE;
+  DDR(HUB08_LC) |= HUB08_LC_LINE;
+  DDR(HUB08_LD) |= HUB08_LD_LINE;
+
+  DDR(HUB08_CLK) |= HUB08_CLK_LINE;
+  DDR(HUB08_LAT) |= HUB08_LAT_LINE;
+  DDR(HUB08_R1) |= HUB08_R1_LINE;
+  DDR(HUB08_OE) |= HUB08_OE_LINE;
+
+  TIMSK0 |= (1 << TOIE0);                         // Enable timer overflow interrupt
+  TIMSK0 |= (1 << OCIE0A);                        // Enable timer compare interrupt
+  TCCR0B |= (0 << CS02) | (1 << CS01) | (0 <<
+                                         CS00);   // Set timer prescaller to 8 (16M/8/256 = 7812.5Hz)
+  OCR0A = 255;
+
+  // Configure Hardware SPI
+  SPCR = (1 << SPE) | (1 << MSTR);
+  SPSR = (1 << SPI2X);
+
+  return;
+}
+
+void hub08Clear(void)
+{
+  uint8_t i;
+
+  for (i = 0; i < HUB08_FB_SIZE; i++)
+    fb[i] = 0x00;
+
   return;
 }
 
@@ -118,6 +129,37 @@ void hub08SetBr(uint8_t level)
     TIMSK0 &= ~(1 << TOIE0);                    // Disable timer overflow interrupt
     TIMSK0 &= ~(1 << OCIE0A);                   // Disable timer compare interrupt
     PORT(HUB08_OE) |= HUB08_OE_LINE;            // Switch off current line
+  }
+
+  return;
+}
+
+void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color)
+{
+  uint8_t *pos = &fb[y * 8 + (7 - x / 8)];
+  uint8_t bit = (0x80 >> (x % 8));
+
+  if (color)
+    *pos |= bit;
+  else
+    *pos &= ~bit;
+
+  return;
+}
+
+void hub08Shift(uint16_t data)
+{
+  int8_t i, j;
+  uint8_t *buf;
+
+  buf = &fb[HUB08_FB_SIZE - 1];
+  for (j = 15; j >= 0; j--) {
+    for (i = 7; i >= 0; i--) {
+      *buf <<= 1;
+      if (i ? * (buf - 1) & 0x80 : data & (1 << j))
+        *buf |= 0x01;
+      buf--;
+    }
   }
 
   return;

@@ -5,9 +5,17 @@
 
 enum {
   FONT_HEIGHT,
+  FONT_SPACE,
 
   FONT_DATA,
 };
+
+typedef struct {
+  uint8_t height;
+  uint8_t space;
+  uint8_t color;
+  const uint8_t *data;
+} Font;
 
 extern const uint8_t font_matrix_08[];
 extern const uint8_t font_matrix_16[];

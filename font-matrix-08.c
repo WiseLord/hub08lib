@@ -3,8 +3,9 @@
 #include <avr/pgmspace.h>
 
 const uint8_t font_matrix_08[] PROGMEM = {
-  // Font height
+  // Font parameters
   0x08,
+  0x01,
 
   // Chars widths
   0x04, 0x01, 0x03, 0x05, 0x05, 0x05, 0x05, 0x02,

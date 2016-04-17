@@ -6,6 +6,7 @@
 #include "pins.h"
 #include "matrix.h"
 
+
 int main(void)
 {
   matrixInit();
@@ -16,14 +17,13 @@ int main(void)
   matrixSetBr(16);
   matrixSetFont(font, 1);
 
-  matrixFill(0x00);
   while (1) {
-    matrixFill(0x00);
-    matrixSetPos(0, 0);
-    matrixWriteString("Тест", OUT_MODE_FIXED);
-    _delay_ms(500);
-    matrixWriteString("Проверка скроллирования", OUT_MODE_SCROLL);
-    _delay_ms(500);
+    matrixClear();
+    matrixLoadString("Test");
+    matrixLoadString(" scrolling");
+    matrixLoadString(" screen");
+    matrixScroll(MATRIX_SCROLL_ON);
+    _delay_ms(8000);
   }
 
   return 0;
