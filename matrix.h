@@ -20,6 +20,7 @@ enum {
 enum {
   SCROLL_START,
   SCROLL_DRAW,
+  SCROLL_TAIL,
   SCROLL_STOP
 };
 

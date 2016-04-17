@@ -56,26 +56,43 @@ static uint8_t matrixReadChar(uint8_t code)
 
 ISR (TIMER3_OVF_vect)
 {
-  static uint8_t swd; // symbol width
-  static uint8_t col; // current symbol column
+  sei();                // this can be interrupted by screen scan
 
-  if (scroll == SCROLL_START) {
-    col = 0;
-    if (*strPtr) {
-      swd = matrixReadChar(*strPtr);
-      scroll = SCROLL_DRAW;
-    } else {
-      scroll = SCROLL_STOP;
-    }
-  }
+  static uint8_t swd;   // symbol width
+  static uint8_t col;   // current symbol column
+  static uint8_t tail;  // tail spaces counter
+  static uint16_t data; // data to be scrolled
 
-  if (scroll == SCROLL_DRAW) {
-    matrixShift(charBuf[col]);
+  switch (scroll) {
+  case SCROLL_DRAW:
+    matrixShift(data);
     if (++col >= swd) {
       strPtr++;
       scroll = SCROLL_START;
     }
+    break;
+  case SCROLL_TAIL:
+    matrixShift(data);
+    if (tail++ >= MATRIX_WIDTH)
+      matrixScroll(SCROLL_STOP);
+    break;
   }
+
+  if (scroll == SCROLL_START) {
+    col = 0;
+    tail = 0;
+    if (*strPtr) {
+      swd = matrixReadChar(*strPtr);
+      scroll = SCROLL_DRAW;
+    } else {
+      scroll = SCROLL_TAIL;
+    }
+  }
+
+  if (scroll == SCROLL_DRAW)
+    data = charBuf[col];
+  else
+    data = font.color ? 0x00 : 0xFFFF;
 
   return;
 }
@@ -137,7 +154,6 @@ void matrixShift(uint16_t data)
 
 void matrixLoadString(char *str)
 {
-  scroll = SCROLL_STOP;
   while (*str)
     *strPtr++ = *str++;
   *strPtr = 0;
