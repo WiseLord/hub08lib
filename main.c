@@ -18,11 +18,11 @@ int main(void)
   matrixSetFont(font, 1);
 
   while (1) {
-    matrixClear();
+    matrixClear(MATRIX_BOTH);
     matrixLoadString("Test");
     matrixLoadString(" scrolling");
     matrixLoadString(" screen");
-    matrixScroll(SCROLL_START);
+    matrixScroll(SCROLL_START, MATRIX_TOP);
     _delay_ms(8000);
   }
 

@@ -50,7 +50,7 @@ static void hub08LoadLineData(void)
   return;
 }
 
-ISR (TIMER0_OVF_vect)
+ISR(TIMER0_OVF_vect)
 {
   // Latch current line to buffers
   PORT(HUB08_LAT) |= HUB08_LAT_LINE;
@@ -65,7 +65,7 @@ ISR (TIMER0_OVF_vect)
   return;
 }
 
-ISR (TIMER0_COMPA_vect)
+ISR(TIMER0_COMPA_vect)
 {
   PORT(HUB08_OE) |= HUB08_OE_LINE;                // Switch off current line
 
@@ -104,11 +104,22 @@ void hub08Init(void)
   return;
 }
 
-void hub08Clear(void)
+void hub08Clear(uint8_t rows)
 {
   uint8_t i;
+  uint8_t start = 0;
+  uint8_t stop = HUB08_FB_SIZE;
 
-  for (i = 0; i < HUB08_FB_SIZE; i++)
+  switch (rows) {
+  case HUB08_BOTTOM:
+    start = HUB08_FB_SIZE / 2;
+    break;
+  case HUB08_TOP:
+    stop = HUB08_FB_SIZE / 2;
+    break;
+  }
+
+  for (i = start; i < stop; i++)
     fb[i] = 0x00;
 
   return;
@@ -147,16 +158,28 @@ void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color)
   return;
 }
 
-void hub08Shift(uint16_t data)
+void hub08Shift(uint16_t data, uint8_t rows)
 {
   int8_t i, j;
   uint8_t *buf;
 
-  buf = &fb[HUB08_FB_SIZE - 1];
-  for (j = 15; j >= 0; j--) {
+  uint8_t start = 0;
+  uint8_t stop = 16;
+
+  switch (rows) {
+  case HUB08_BOTTOM:
+    stop = 8;
+    break;
+  case HUB08_TOP:
+    start = 8;
+    break;
+  }
+
+  buf = &fb[HUB08_FB_SIZE - start * 8 - 1];
+  for (j = start; j < stop; j++) {
     for (i = 7; i >= 0; i--) {
       *buf <<= 1;
-      if (i ? * (buf - 1) & 0x80 : data & (1 << j))
+      if (i ? * (buf - 1) & 0x80 : data & (0x8000U >> j))
         *buf |= 0x01;
       buf--;
     }
