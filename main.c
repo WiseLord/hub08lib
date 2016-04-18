@@ -12,18 +12,42 @@ int main(void)
   matrixInit();
   sei();
 
-  const uint8_t *font = font_matrix_16;
-
   matrixSetBr(16);
-  matrixSetFont(font, 1);
 
   while (1) {
-    matrixClear(MATRIX_BOTH);
-    matrixLoadString("Test");
-    matrixLoadString(" scrolling");
-    matrixLoadString(" screen");
-    matrixScroll(SCROLL_START, MATRIX_TOP);
-    _delay_ms(8000);
+    matrixClear(ROW_BOTH);
+    matrixSetFont(font_matrix_16, 1);
+    matrixLoadScrollString("Scroll");
+    matrixLoadScrollString(" large font");
+    matrixScroll(SCROLL_START, ROW_BOTH);
+    matrixSetCol(0);
+    matrixLoadOutString("Large");
+    _delay_ms(5000);
+    matrixShow(ROW_BOTH);
+    _delay_ms(3000);
+
+    matrixClear(ROW_BOTH);
+    matrixSetFont(font_matrix_08, 1);
+    matrixLoadScrollString("Scroll");
+    matrixLoadScrollString(" top line");
+    matrixScroll(SCROLL_START, ROW_TOP);
+    matrixSetCol(0);
+    matrixLoadOutString("Small");
+    matrixLoadOutString(" font");
+    _delay_ms(3000);
+    matrixShow(ROW_BOTTOM);
+    _delay_ms(3000);
+
+    matrixSetFont(font_matrix_08, 1);
+    matrixLoadScrollString("Scroll");
+    matrixLoadScrollString(" bottom line");
+    matrixScroll(SCROLL_START, ROW_BOTTOM);
+    matrixSetCol(0);
+    matrixLoadOutString("Small");
+    matrixLoadOutString(" font");
+    _delay_ms(3000);
+    matrixShow(ROW_TOP);
+    _delay_ms(3000);
   }
 
   return 0;

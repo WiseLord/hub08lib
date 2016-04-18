@@ -104,27 +104,6 @@ void hub08Init(void)
   return;
 }
 
-void hub08Clear(uint8_t rows)
-{
-  uint8_t i;
-  uint8_t start = 0;
-  uint8_t stop = HUB08_FB_SIZE;
-
-  switch (rows) {
-  case HUB08_BOTTOM:
-    start = HUB08_FB_SIZE / 2;
-    break;
-  case HUB08_TOP:
-    stop = HUB08_FB_SIZE / 2;
-    break;
-  }
-
-  for (i = start; i < stop; i++)
-    fb[i] = 0x00;
-
-  return;
-}
-
 void hub08SetBr(uint8_t level)
 {
   uint8_t brStep = 128 / HUB08_MAX_BR;

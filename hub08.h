@@ -17,7 +17,6 @@ enum {
 };
 
 void hub08Init(void);
-void hub08Clear(uint8_t rows);
 void hub08SetBr(uint8_t level);
 void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color);
 void hub08Shift(uint16_t data, uint8_t rows);
