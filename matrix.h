@@ -11,9 +11,12 @@
 #define MATRIX_STRING_MAX_LENGTH    256
 
 typedef enum {
+  ROW_NONE,
   ROW_TOP,
   ROW_BOTTOM,
   ROW_BOTH,
+  ROW_BOTH_NONE,
+  ROW_BOTH_TOP,
   ROW_BOTH_BOTTOM
 } MatrixRow;
 

@@ -10,12 +10,6 @@
 
 #define HUB08_MAX_BR            16
 
-enum {
-  HUB08_TOP,
-  HUB08_BOTTOM,
-  HUB08_BOTH
-};
-
 void hub08Init(void);
 void hub08SetBr(uint8_t level);
 void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color);

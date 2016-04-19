@@ -7,6 +7,7 @@
 static uint8_t fb[HUB08_FB_SIZE];                   // Frame buffer
 static int8_t line;                                 // Current line
 
+inline __attribute__((always_inline))
 static void hub08SelectLine(void)
 {
   if (line & (1 << 0))
@@ -32,19 +33,21 @@ static void hub08SelectLine(void)
   return;
 }
 
+inline __attribute__((always_inline))
 static void hub08LoadLineData(void)
 {
   int8_t matr;
+  uint8_t *fbPtr;
 
   // Switch to new line
-  if (--line < 0)
-    line = 15;
+  ++line;
+  line &= 0x0F;
+  fbPtr = fb + line * (HUB08_WIDTH / 8);
 
   // Prepare data for new line
-  for (matr = 7; matr >= 0; matr--) {
-    SPDR = fb[line * (HUB08_WIDTH / 8) + matr];
-    // It takes time to calculate index, so we can skip check SPI status
-    // while(!(SPSR & (1<<SPIF)));
+  for (matr = 0; matr <  HUB08_WIDTH / 8; matr++) {
+    SPDR = *fbPtr++;
+    while(!(SPSR & (1<<SPIF)));
   }
 
   return;
@@ -126,7 +129,7 @@ void hub08SetBr(uint8_t level)
 
 void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color)
 {
-  uint8_t *pos = &fb[y * 8 + (7 - x / 8)];
+  uint8_t *pos = &fb[y * 8 + x / 8];
   uint8_t bit = (0x80 >> (x % 8));
 
   if (color)
@@ -142,25 +145,17 @@ void hub08Shift(uint16_t data, uint8_t rows)
   int8_t i, j;
   uint8_t *buf;
 
-  uint8_t start = 0;
-  uint8_t stop = 16;
+  uint8_t start = rows & 0x01 ? 0 : 8;
+  uint8_t stop = rows & 0x02 ? 16 : 8;
 
-  switch (rows) {
-  case HUB08_BOTTOM:
-    stop = 8;
-    break;
-  case HUB08_TOP:
-    start = 8;
-    break;
-  }
+  buf = fb + start * 8;
 
-  buf = &fb[HUB08_FB_SIZE - start * 8 - 1];
   for (j = start; j < stop; j++) {
     for (i = 7; i >= 0; i--) {
       *buf <<= 1;
-      if (i ? * (buf - 1) & 0x80 : data & (0x8000U >> j))
+      if (i ? * (buf + 1) & 0x80 : data & (0x0001U << j))
         *buf |= 0x01;
-      buf--;
+      buf++;
     }
   }
 

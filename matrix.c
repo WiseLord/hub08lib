@@ -81,7 +81,7 @@ ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
   case SCROLL_TAIL:
     matrixShift(data);
     if (tail++ >= MATRIX_WIDTH)
-      matrixScroll(SCROLL_STOP, HUB08_BOTH);
+      matrixScroll(SCROLL_STOP, ROW_BOTH);
     break;
   default:
     break;
@@ -173,11 +173,11 @@ void matrixShift(uint16_t data)
 {
   MatrixRow row = scrollRow;
 
-  if (scrollRow &= 0x01)
+  if ((scrollRow & 0x03) == ROW_BOTTOM)
     data <<= 8;
 
   if (font.height > 8 || scrollRow >= ROW_BOTH)
-    row = HUB08_BOTH;
+    row = ROW_BOTH;
 
   hub08Shift(data, row);
 
@@ -225,7 +225,7 @@ void matrixShow(MatrixRow row)
 {
   uint8_t i;
 
-  if (row + scrollRow != ROW_BOTTOM) // Different small rows
+  if (row + scrollRow != ROW_BOTH) // Different small rows
     matrixScroll(SCROLL_STOP, ROW_BOTH);
 
   for (i = 0; i < MATRIX_WIDTH; i++) {
