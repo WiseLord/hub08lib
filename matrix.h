@@ -38,7 +38,7 @@ void matrixSetBr(uint8_t level);
 void matrixSetFont(const uint8_t *font, uint8_t color);
 void matrixClear(MatrixRow row);
 void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color);
-void matrixDrawColumn(uint8_t x, uint16_t data, MatrixRow row);
+void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row);
 
 void matrixShift(uint8_t *data);
 

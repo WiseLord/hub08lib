@@ -8,12 +8,12 @@ Font font;
 
 static char scrollStrBuf[MATRIX_STRING_MAX_LENGTH];
 static char *scrollStrPtr = scrollStrBuf;
-static uint8_t scrollCharBuf[MATRIX_HEIGHT / 8][MATRIX_CHAR_MAX_WIDTH];
+static uint8_t scrollCharBuf[MATRIX_CHAR_MAX_WIDTH][MATRIX_HEIGHT / 8];
 
 static volatile MatrixScroll scroll = SCROLL_STOP;
 static MatrixRow scrollRow = ROW_TOP;
 
-static uint8_t outBuf[MATRIX_HEIGHT / 8][HUB08_WIDTH];
+static uint8_t outBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
 static uint8_t outCol = 0;
 
 static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
@@ -47,9 +47,9 @@ static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
       if (!font.color)
         data = ~data;
       if (buf == BUF_SCROLL)
-        scrollCharBuf[j][i] = data;
+        scrollCharBuf[i][j] = data;
       else if (outCol < HUB08_WIDTH)
-        outBuf[j][outCol] = data;
+        outBuf[outCol][j] = data;
     }
     outCol++;
   }
@@ -95,7 +95,7 @@ ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
 
   for (i = 0; i < MATRIX_HEIGHT / 8; i++)
     if (scroll == SCROLL_DRAW)
-      data[i] = scrollCharBuf[i][col];
+      data[i] = scrollCharBuf[col][i];
     else
       data[i] = font.color ? 0x00 : 0xFF;
 
@@ -146,21 +146,18 @@ void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color)
   return;
 }
 
-void matrixDrawColumn(uint8_t x, uint16_t data, MatrixRow row)
+void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
 {
-  int8_t k;
-  uint8_t start = 0;
-  uint8_t stop = 16;
+  int8_t r, y;
 
-  if (row == ROW_TOP) {
-    stop = 8;
-  } else if (row == ROW_BOTTOM) {
-    data <<= 8;
-    start = 8;
+  if ((row & 0x03) == ROW_BOTTOM)
+    data[1] = data[0];
+
+  for (r = 0; r < MATRIX_HEIGHT / 8; r++) {
+    if (row & (1 << r))
+      for (y = 0; y < 8; y++)
+        matrixDrawPixel(x, r * 8 + y, data[r] & (1 << y));
   }
-
-  for (k = start; k < stop; k++)
-    matrixDrawPixel(x, k, (data & (1 << k)) != 0);
 
   return;
 }
@@ -169,7 +166,7 @@ void matrixShift(uint8_t *data)
 {
   MatrixRow row = scrollRow;
 
-  if ((scrollRow & 0x03) == ROW_BOTTOM)
+  if ((row & 0x03) == ROW_BOTTOM)
     data[1] = data[0];
 
   if (font.height > 8 || scrollRow >= ROW_BOTH)
@@ -224,9 +221,8 @@ void matrixShow(MatrixRow row)
   if (row + scrollRow != ROW_BOTH) // Different small rows
     matrixScroll(SCROLL_STOP, ROW_BOTH);
 
-  for (i = 0; i < MATRIX_WIDTH; i++) {
-    matrixDrawColumn(i, (outBuf[1][i] << 8) + outBuf[0][i], row);
-  }
+  for (i = 0; i < MATRIX_WIDTH; i++)
+    matrixDrawColumn(i, outBuf[i], row);
 
   return;
 }
