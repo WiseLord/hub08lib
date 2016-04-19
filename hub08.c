@@ -140,22 +140,22 @@ void hub08DrawPixel(uint8_t x, uint8_t y, uint8_t color)
   return;
 }
 
-void hub08Shift(uint16_t data, uint8_t rows)
+void hub08Shift(uint8_t *data, uint8_t row)
 {
-  int8_t i, j;
+  int8_t i, j, r;
   uint8_t *buf;
 
-  uint8_t start = rows & 0x01 ? 0 : 8;
-  uint8_t stop = rows & 0x02 ? 16 : 8;
-
-  buf = fb + start * 8;
-
-  for (j = start; j < stop; j++) {
-    for (i = 7; i >= 0; i--) {
-      *buf <<= 1;
-      if (i ? * (buf + 1) & 0x80 : data & (0x0001U << j))
-        *buf |= 0x01;
-      buf++;
+  for (r = 0; r < HUB08_HEIGHT / 8; r++) {
+    if (row & (1 << r)) {
+      buf = fb + r * HUB08_WIDTH;
+      for (j = 0; j < 8; j++) {
+        for (i = HUB08_WIDTH / 8 - 1; i >= 0; i--) {
+          *buf <<= 1;
+          if (i ? * (buf + 1) & 0x80 : data[r] & (1 << j))
+            *buf |= 0x01;
+          buf++;
+        }
+      }
     }
   }
 

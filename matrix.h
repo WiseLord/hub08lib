@@ -40,7 +40,7 @@ void matrixClear(MatrixRow row);
 void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color);
 void matrixDrawColumn(uint8_t x, uint16_t data, MatrixRow row);
 
-void matrixShift(uint16_t data);
+void matrixShift(uint8_t *data);
 
 void matrixLoadScrollString(char *str);
 void matrixScroll(MatrixScroll mode, MatrixRow row);
