@@ -35,10 +35,10 @@ AD_CMD   = $(AD_MCU) $(AD_PROG) $(AD_PORT) -V
 OBJS     = $(addprefix $(BUILDDIR)/, $(SRCS:.c=.o))
 ELF      = $(BUILDDIR)/$(TARG).elf
 
+all: $(ELF) size
+
 # Dependencies
 -include $(OBJS:.o=.d)
-
-all: $(ELF) size
 
 $(ELF): $(OBJS)
 	@mkdir -p $(BUILDDIR) flash
