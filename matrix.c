@@ -15,6 +15,7 @@ static MatrixRow scrollRow = ROW_TOP;
 
 static uint8_t outBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
 static uint8_t outCol = 0;
+static uint8_t outRow = 0;
 
 static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
 {
@@ -47,9 +48,9 @@ static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
       if (!font.color)
         data = ~data;
       if (buf == BUF_SCROLL)
-        scrollCharBuf[i][j] = data;
+        scrollCharBuf[i][j + (scrollRow == ROW_BOTTOM)] = data;
       else if (outCol < HUB08_WIDTH)
-        outBuf[outCol][j] = data;
+        outBuf[outCol][j + (outRow == ROW_BOTTOM)] = data;
     }
     outCol++;
   }
@@ -129,7 +130,7 @@ void matrixClear(MatrixRow row)
   uint8_t *ptr = outBuf[0];
 
   for (i = 0; i < MATRIX_FB_SIZE; i++)
-    *ptr++ = 0;
+    *ptr++ = 0x00;
 
   matrixShow(row);
 
@@ -150,9 +151,6 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
 {
   int8_t r, y;
 
-  if ((row & 0x03) == ROW_BOTTOM)
-    data[1] = data[0];
-
   for (r = 0; r < MATRIX_HEIGHT / 8; r++) {
     if (row & (1 << r))
       for (y = 0; y < 8; y++)
@@ -164,15 +162,7 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
 
 void matrixShift(uint8_t *data)
 {
-  MatrixRow row = scrollRow;
-
-  if ((row & 0x03) == ROW_BOTTOM)
-    data[1] = data[0];
-
-  if (font.height > 8 || scrollRow >= ROW_BOTH)
-    row = ROW_BOTH;
-
-  hub08Shift(data, row);
+  hub08Shift(data, scrollRow);
 
   return;
 }
@@ -208,9 +198,12 @@ void matrixLoadOutString(char *str)
   return;
 }
 
-void matrixSetCol(uint8_t col)
+void matrixSetCol(uint8_t col, uint8_t row)
 {
   outCol = col;
+  outRow = row;
+
+  return;
 }
 
 

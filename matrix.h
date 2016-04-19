@@ -15,9 +15,6 @@ typedef enum {
   ROW_TOP,
   ROW_BOTTOM,
   ROW_BOTH,
-  ROW_BOTH_NONE,
-  ROW_BOTH_TOP,
-  ROW_BOTH_BOTTOM
 } MatrixRow;
 
 typedef enum {
@@ -47,7 +44,7 @@ void matrixScroll(MatrixScroll mode, MatrixRow row);
 
 MatrixScroll matrixGetScroll(void);
 
-void matrixSetCol(uint8_t col);
+void matrixSetCol(uint8_t col, uint8_t row);
 void matrixLoadOutString(char *str);
 void matrixShow(MatrixRow row);
 
