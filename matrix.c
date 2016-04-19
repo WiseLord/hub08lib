@@ -63,10 +63,8 @@ static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
   return swd + font.space;
 }
 
-ISR(TIMER3_OVF_vect)
+ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
 {
-  sei();                // this can be interrupted by screen scan
-
   static uint8_t swd;   // symbol width
   static uint8_t col;   // current symbol column
   static uint8_t tail;  // tail spaces counter
