@@ -11,8 +11,14 @@ int main(void)
 {
   matrixInit();
   sei();
+  matrixSetFont(font_matrix_16, 1);
+  matrixLoadOutString("Large  ");
+  matrixShow(ROW_BOTH, EFFECT_SCROLL_UP);
 
-  matrixSetBr(16);
+  DDR(BUZZER) |= BUZZER_LINE;
+  PORT(BUZZER) &= ~BUZZER_LINE;
+  _delay_ms(50);
+  PORT(BUZZER) |= BUZZER_LINE;
 
   matrixClear(ROW_BOTH, EFFECT_NONE);
   matrixSetFont(font_matrix_16, 1);

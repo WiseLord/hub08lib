@@ -30,4 +30,19 @@
 #define HUB08_CLK           ARDUINO_SCLK
 #define HUB08_CLK_LINE      ARDUINO_SCLK_LINE
 
+#define BUTTON_1            ARDUINO_A0
+#define BUTTON_1_LINE       ARDUINO_A0_LINE
+#define BUTTON_2            ARDUINO_A1
+#define BUTTON_2_LINE       ARDUINO_A1_LINE
+#define BUTTON_3            ARDUINO_A2
+#define BUTTON_3_LINE       ARDUINO_A2_LINE
+
+#define BUZZER              ARDUINO_A5
+#define BUZZER_LINE         ARDUINO_A5_LINE
+
+#define I2C_SCL             ARDUINO_D3
+#define I2C_SCL_LINE        ARDUINO_D3_LINE
+#define I2C_SDA             ARDUINO_D2
+#define I2C_SDA_LINE        ARDUINO_D2_LINE
+
 #endif /* PINS_H */
