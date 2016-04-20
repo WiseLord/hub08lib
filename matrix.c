@@ -13,7 +13,10 @@ static uint8_t scrollCharBuf[MATRIX_CHAR_MAX_WIDTH][MATRIX_HEIGHT / 8];
 static volatile MatrixScroll scroll = SCROLL_STOP;
 static MatrixRow scrollRow = ROW_TOP;
 
+static uint8_t scrBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
 static uint8_t outBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
+static uint16_t *scrBig = (uint16_t *)scrBuf;
+static uint16_t *outBig = (uint16_t *)outBuf;
 static uint8_t outCol = 0;
 static uint8_t outRow = 0;
 
@@ -65,6 +68,8 @@ ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
   static uint8_t tail;                    // tail spaces counter
   static uint8_t data[MATRIX_HEIGHT / 8]; // data to be scrolled
   uint8_t i;
+
+  TCNT3 = 32768;
 
   switch (scroll) {
   case SCROLL_DRAW:
@@ -123,8 +128,7 @@ void matrixSetFont(const uint8_t *fnt, uint8_t color)
   font.color = color;
 }
 
-
-void matrixClear(MatrixRow row)
+void matrixClear(MatrixRow row, MatrixEffect effect)
 {
   uint8_t i;
   uint8_t *ptr = outBuf[0];
@@ -132,7 +136,7 @@ void matrixClear(MatrixRow row)
   for (i = 0; i < MATRIX_FB_SIZE; i++)
     *ptr++ = 0x00;
 
-  matrixShow(row);
+  matrixShow(row, effect);
 
   return;
 }
@@ -162,7 +166,17 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
 
 void matrixShift(uint8_t *data)
 {
+  uint8_t i, r;
   hub08Shift(data, scrollRow);
+
+  for (r = 0; r < MATRIX_HEIGHT / 8; r++) {
+    if (scrollRow & (1 << r)) {
+      for (i = 0; i < MATRIX_WIDTH - 1; i++) {
+        scrBuf[i][r] = scrBuf[i + 1][r];
+      }
+      scrBuf[MATRIX_WIDTH - 1][r] = data[r];
+    }
+  }
 
   return;
 }
@@ -206,16 +220,84 @@ void matrixSetCol(uint8_t col, uint8_t row)
   return;
 }
 
-
-void matrixShow(MatrixRow row)
+void matrixShow(MatrixRow row, MatrixEffect effect)
 {
-  uint8_t i;
+  uint8_t i, r, b;
 
-  if (row + scrollRow != ROW_BOTH) // Different small rows
+  if (row == scrollRow || row + scrollRow > ROW_BOTH)
     matrixScroll(SCROLL_STOP, ROW_BOTH);
 
-  for (i = 0; i < MATRIX_WIDTH; i++)
-    matrixDrawColumn(i, outBuf[i], row);
+  switch (row) {
+  case ROW_TOP:
+  case ROW_BOTTOM:
+    r = row - ROW_TOP;
+    switch (effect) {
+    case EFFECT_SCROLL_UP:
+      for (b = 0; b < 8; b++) {
+        for (i = 0; i < MATRIX_WIDTH; i++) {
+          scrBuf[i][r] >>= 1;
+          if (outBuf[i][r] & (0x01 << b))
+            scrBuf[i][r] |= 0x80;
+          matrixDrawColumn(i, scrBuf[i], row);
+        }
+        _delay_ms(10);
+      }
+      break;
+    case EFFECT_SCROLL_DOWN:
+      for (b = 0; b < 8; b++) {
+        for (i = 0; i < MATRIX_WIDTH; i++) {
+          scrBuf[i][r] <<= 1;
+          if (outBuf[i][r] & (0x80 >> b))
+            scrBuf[i][r] |= 0x01;
+          matrixDrawColumn(i, scrBuf[i], row);
+        }
+        _delay_ms(10);
+      }
+      break;
+    default:
+      for (i = 0; i < MATRIX_WIDTH; i++) {
+        scrBuf[i][r] = outBuf[i][r];
+        matrixDrawColumn(i, scrBuf[i], row);
+      }
+      break;
+    }
+    break;
+  case ROW_BOTH:
+    switch (effect) {
+    case EFFECT_SCROLL_UP:
+      for (b = 0; b < 16; b++) {
+        for (i = 0; i < MATRIX_WIDTH; i++) {
+          scrBig[i] >>= 1;
+          if (outBig[i] & (0x0001 << b))
+            scrBig[i] |= 0x8000;
+          matrixDrawColumn(i, scrBuf[i], row);
+        }
+        _delay_ms(5);
+      }
+      break;
+    case EFFECT_SCROLL_DOWN:
+      for (b = 0; b < 16; b++) {
+        for (i = 0; i < MATRIX_WIDTH; i++) {
+          scrBig[i] <<= 1;
+          if (outBig[i] & (0x8000 >> b))
+            scrBig[i] |= 0x0001;
+          matrixDrawColumn(i, scrBuf[i], row);
+        }
+        _delay_ms(5);
+      }
+      break;
+    default:
+      for (i = 0; i < MATRIX_WIDTH; i++) {
+        for (r = 0; r < MATRIX_HEIGHT / 8; r++)
+          scrBuf[i][r] = outBuf[i][r];
+        matrixDrawColumn(i, scrBuf[i], row);
+      }
+      break;
+    }
+    break;
+  default:
+    break;
+  }
 
   return;
 }

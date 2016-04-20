@@ -29,11 +29,17 @@ typedef enum {
   BUF_FIXED
 } MatrixOutbuf;
 
+typedef enum {
+  EFFECT_NONE,
+  EFFECT_SCROLL_UP,
+  EFFECT_SCROLL_DOWN,
+} MatrixEffect;
+
 void matrixInit(void);
 void matrixSetBr(uint8_t level);
 
 void matrixSetFont(const uint8_t *font, uint8_t color);
-void matrixClear(MatrixRow row);
+void matrixClear(MatrixRow row, MatrixEffect effect);
 void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color);
 void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row);
 
@@ -46,6 +52,6 @@ MatrixScroll matrixGetScroll(void);
 
 void matrixSetCol(uint8_t col, uint8_t row);
 void matrixLoadOutString(char *str);
-void matrixShow(MatrixRow row);
+void matrixShow(MatrixRow row, MatrixEffect effect);
 
 #endif // MATRIX_H

@@ -14,9 +14,12 @@ int main(void)
 
   matrixSetBr(16);
 
+  matrixClear(ROW_BOTH, EFFECT_NONE);
+  matrixSetFont(font_matrix_16, 1);
+
   while (1) {
     matrixSetFont(font_matrix_08, 1);
-    matrixClear(ROW_BOTH);
+    matrixClear(ROW_BOTH, EFFECT_SCROLL_DOWN);
     matrixSetCol(0, ROW_TOP);
     matrixLoadOutString("Top");
     matrixSetCol(9, ROW_BOTTOM);
@@ -24,8 +27,8 @@ int main(void)
     matrixSetFont(font_matrix_16, 1);
     matrixSetCol(30, ROW_BOTH);
     matrixLoadOutString("Big");
-    matrixShow(ROW_BOTH);
-    _delay_ms(2000);
+    matrixShow(ROW_BOTH, EFFECT_SCROLL_UP);
+    _delay_ms(1000);
 
     matrixSetFont(font_matrix_16, 1);
     matrixLoadScrollString(" Scroll");
@@ -33,11 +36,11 @@ int main(void)
     matrixScroll(SCROLL_START, ROW_BOTH);
     matrixSetCol(0, ROW_TOP);
     matrixLoadOutString("Large  ");
-    _delay_ms(6000);
-    matrixShow(ROW_BOTH);
     _delay_ms(3000);
+    matrixShow(ROW_BOTH, EFFECT_SCROLL_UP);
+    _delay_ms(1000);
 
-    matrixClear(ROW_BOTH);
+    matrixClear(ROW_BOTH, EFFECT_SCROLL_DOWN);
     matrixSetFont(font_matrix_08, 1);
     matrixLoadScrollString("Scroll");
     matrixLoadScrollString(" top line");
@@ -45,9 +48,9 @@ int main(void)
     matrixSetCol(0, ROW_BOTTOM);
     matrixLoadOutString("Small");
     matrixLoadOutString(" font");
-    _delay_ms(2000);
-    matrixShow(ROW_BOTTOM);
-    _delay_ms(3000);
+    _delay_ms(1000);
+    matrixShow(ROW_BOTTOM, EFFECT_SCROLL_UP);
+    _delay_ms(1000);
 
     matrixSetFont(font_matrix_08, 1);
     matrixLoadScrollString("Scroll");
@@ -56,9 +59,9 @@ int main(void)
     matrixSetCol(0, ROW_TOP);
     matrixLoadOutString("Small");
     matrixLoadOutString(" font");
-    _delay_ms(2000);
-    matrixShow(ROW_TOP);
-    _delay_ms(3000);
+    _delay_ms(1000);
+    matrixShow(ROW_TOP, EFFECT_SCROLL_DOWN);
+    _delay_ms(1000);
   }
 
   return 0;
