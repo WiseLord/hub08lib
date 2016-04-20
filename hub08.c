@@ -109,13 +109,11 @@ void hub08Init(void)
 
 void hub08SetBr(uint8_t level)
 {
-  uint8_t brStep = 128 / HUB08_MAX_BR;
-
   if (level > HUB08_MAX_BR)
     level = HUB08_MAX_BR;
 
   if (level) {
-    OCR0A = (level - 1) * brStep - 1 + brStep;
+    OCR0A = (level - 1) * HUB08_BR_STEP - 1 + HUB08_BR_STEP;
     TIMSK0 |= (1 << TOIE0);                     // Enable timer overflow interrupt
     TIMSK0 |= (1 << OCIE0A);                    // Enable timer compare interrupt
   } else {

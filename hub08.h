@@ -9,6 +9,7 @@
 #define HUB08_FB_SIZE           (HUB08_WIDTH / 8 * 16)
 
 #define HUB08_MAX_BR            16
+#define HUB08_BR_STEP           (256 / HUB08_MAX_BR)
 
 void hub08Init(void);
 void hub08SetBr(uint8_t level);
