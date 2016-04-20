@@ -13,7 +13,7 @@ enum {
 	RTC_DATE,
 	RTC_MONTH,
 	RTC_YEAR,
-	RTC_ETM,
+  RTC_ETM,
 };
 
 typedef struct {
@@ -24,7 +24,7 @@ typedef struct {
 	int8_t date;
 	int8_t month;
 	int8_t year;
-	int8_t etm;
+  int8_t etm;
 } RTC_type;
 
 extern RTC_type rtc;
@@ -32,6 +32,7 @@ extern RTC_type rtc;
 #define RTC_NOEDIT			0xFF
 
 void rtcReadTime(void);
+void rtcSaveTime(void);
 void rtcNextEditParam(void);
 void rtcChangeTime(int8_t diff);
 

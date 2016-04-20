@@ -56,7 +56,7 @@ void rtcReadTime(void)
 	return;
 }
 
-static void rtcSaveTime(void)
+void rtcSaveTime(void)
 {
 	uint8_t i;
 	uint8_t etm = rtc.etm;

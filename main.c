@@ -5,12 +5,47 @@
 
 #include "pins.h"
 #include "matrix.h"
+#include "rtc.h"
 
+static char *mkNumberString(int16_t value, uint8_t width, uint8_t prec, uint8_t lead)
+{
+  static char strbuf[8];
+
+  uint8_t sign = lead;
+  int8_t pos;
+
+  if (value < 0) {
+    sign = '-';
+    value = -value;
+  }
+
+  // Clear buffer and go to it's tail
+  for (pos = 0; pos < width + prec; pos++)
+    strbuf[pos] = lead;
+  strbuf[pos--] = '\0';
+
+  // Fill buffer from right to left
+  while (value > 0 || pos > width - 2) {
+    if (prec && (width - pos - 1 == 0))
+      strbuf[pos--] = '.';
+    strbuf[pos] = value % 10 + 0x30;
+    pos--;
+    value /= 10;
+  }
+
+  if (pos >= 0)
+    strbuf[pos] = sign;
+
+  return strbuf;
+}
 
 int main(void)
 {
   matrixInit();
   sei();
+
+  matrixSetBr(4);
+
   matrixSetFont(font_matrix_16, 1);
   matrixLoadOutString("Large  ");
   matrixShow(ROW_BOTH, EFFECT_SCROLL_UP);
@@ -21,7 +56,21 @@ int main(void)
   PORT(BUZZER) |= BUZZER_LINE;
 
   matrixClear(ROW_BOTH, EFFECT_NONE);
-  matrixSetFont(font_matrix_16, 1);
+
+  while (1) {
+    rtcReadTime();
+    matrixSetCol(0, ROW_BOTH);
+    matrixSetFont(font_matrix_16, 1);
+    matrixLoadOutString(mkNumberString(rtc.hour, 2, 0, '0'));
+    matrixLoadOutString(":");
+    matrixLoadOutString(mkNumberString(rtc.min, 2, 0, '0'));
+    matrixSetFont(font_matrix_08, 1);
+    matrixSetCol(55, ROW_TOP);
+    matrixLoadOutString(mkNumberString(rtc.sec, 2, 0, '0'));
+    matrixSetCol(55, ROW_BOTTOM);
+    matrixLoadOutString(mkNumberString(rtc.date, 2, 0, '0'));
+    matrixShow(ROW_BOTH, EFFECT_NONE);
+  }
 
   while (1) {
     matrixSetFont(font_matrix_08, 1);
