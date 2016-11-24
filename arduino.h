@@ -1,7 +1,7 @@
 #ifndef ARDUINO_H
 #define ARDUINO_H
 
-#define ARDUINO_LEONARDO
+#define ARDUINO_PRO_MINI
 
 #if defined(ARDUINO_LEONARDO)
 

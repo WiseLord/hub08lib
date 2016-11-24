@@ -61,7 +61,7 @@ static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
   return swd + font.space;
 }
 
-ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
+ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 {
   static uint8_t swd;                     // symbol width
   static uint8_t col;                     // current symbol column
@@ -69,7 +69,7 @@ ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
   static uint8_t data[MATRIX_HEIGHT / 8]; // data to be scrolled
   uint8_t i;
 
-  TCNT3 = 32768;
+  TCNT1 = 32768;
 
   switch (scroll) {
   case SCROLL_DRAW:
@@ -111,8 +111,8 @@ ISR(TIMER3_OVF_vect, ISR_NOBLOCK)
 void matrixInit(void)
 {
   hub08Init();
-  TIMSK3 = (1 << TOIE3);
-  TCCR3B |= (0 << CS32) | (1 << CS31) | (0 << CS30);
+  TIMSK1 = (1 << TOIE1);
+  TCCR1B |= (0 << CS12) | (1 << CS11) | (0 << CS10);
 }
 
 void matrixSetBr(uint8_t level)

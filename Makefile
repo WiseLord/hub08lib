@@ -2,7 +2,7 @@
 TARG     = hub08lib
 
 # MCU name and frequency
-MCU      = atmega32u4
+MCU      = atmega328p
 F_CPU    = 16000000
 
 # Source files
