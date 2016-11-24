@@ -3,6 +3,7 @@
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include "fonts.h"
 
 Font font;
 
@@ -13,8 +14,8 @@ static uint8_t scrollCharBuf[MATRIX_CHAR_MAX_WIDTH][MATRIX_HEIGHT / 8];
 static volatile MatrixScroll scroll = SCROLL_STOP;
 static MatrixRow scrollRow = ROW_TOP;
 
-static uint8_t scrBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
-static uint8_t outBuf[HUB08_WIDTH][MATRIX_HEIGHT / 8];
+static uint8_t scrBuf[MATRIX_WIDTH][MATRIX_HEIGHT / 8];
+static uint8_t outBuf[MATRIX_WIDTH][MATRIX_HEIGHT / 8];
 static uint16_t *scrBig = (uint16_t *)scrBuf;
 static uint16_t *outBig = (uint16_t *)outBuf;
 static uint8_t outCol = 0;
@@ -52,7 +53,7 @@ static uint8_t matrixReadChar(uint8_t code, MatrixOutbuf buf)
         data = ~data;
       if (buf == BUF_SCROLL)
         scrollCharBuf[i][j + (scrollRow == ROW_BOTTOM)] = data;
-      else if (outCol < HUB08_WIDTH)
+      else if (outCol < MATRIX_WIDTH)
         outBuf[outCol][j + (outRow == ROW_BOTTOM)] = data;
     }
     outCol++;
@@ -110,14 +111,22 @@ ISR(TIMER1_OVF_vect, ISR_NOBLOCK)
 
 void matrixInit(void)
 {
+#if defined(HUB08)
   hub08Init();
+#elif defined(MAX7219)
+  // Init MAX7219
+#endif
   TIMSK1 = (1 << TOIE1);
   TCCR1B |= (0 << CS12) | (1 << CS11) | (0 << CS10);
 }
 
 void matrixSetBr(uint8_t level)
 {
+#if defined(HUB08)
   hub08SetBr(level);
+#elif defined(MAX7219)
+  // Set MAX7219 brightness
+#endif
 }
 
 void matrixSetFont(const uint8_t *fnt, uint8_t color)
@@ -146,7 +155,9 @@ void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color)
   if (x >= MATRIX_WIDTH || y >= MATRIX_HEIGHT)
     return;
 
+#if defined(HUB08)
   hub08DrawPixel(x, y, color);
+#endif
 
   return;
 }
@@ -160,6 +171,9 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
       for (y = 0; y < 8; y++)
         matrixDrawPixel(x, r * 8 + y, data[r] & (1 << y));
   }
+#if defined(MAX7219)
+  // Update MAX7219 buffer
+#endif
 
   return;
 }
@@ -167,7 +181,9 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
 void matrixShift(uint8_t *data)
 {
   uint8_t i, r;
+#if defined(HUB08)
   hub08Shift(data, scrollRow);
+#endif
 
   for (r = 0; r < MATRIX_HEIGHT / 8; r++) {
     if (scrollRow & (1 << r)) {
@@ -177,6 +193,9 @@ void matrixShift(uint8_t *data)
       scrBuf[MATRIX_WIDTH - 1][r] = data[r];
     }
   }
+#if defined(MAX7219)
+  // Update MAX7219 buffer
+#endif
 
   return;
 }

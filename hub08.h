@@ -2,7 +2,6 @@
 #define HUB08_H
 
 #include <inttypes.h>
-#include "fonts.h"
 
 #define HUB08_WIDTH             64
 #define HUB08_HEIGHT            16

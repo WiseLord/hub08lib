@@ -1,12 +1,23 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#include "hub08.h"
+#include <inttypes.h>
 
+#define HUB08
+
+#if defined(HUB08)
+#include "hub08.h"
+#elif defined(MAX7219)
+#include "max7219.h"
+#endif
+
+#if defined(HUB08)
 #define MATRIX_WIDTH                HUB08_WIDTH
 #define MATRIX_HEIGHT               HUB08_HEIGHT
 #define MATRIX_FB_SIZE              HUB08_FB_SIZE
 #define MATRIX_MAX_BR               HUB08_MAX_BR
+#elif defined(MAX7219)
+#endif
 #define MATRIX_CHAR_MAX_WIDTH       13
 #define MATRIX_STRING_MAX_LENGTH    256
 

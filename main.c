@@ -6,6 +6,7 @@
 #include "pins.h"
 #include "matrix.h"
 #include "rtc.h"
+#include "fonts.h"
 
 static char *mkNumberString(int16_t value, uint8_t width, uint8_t prec, uint8_t lead)
 {
