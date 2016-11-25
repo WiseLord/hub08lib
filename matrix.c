@@ -114,7 +114,7 @@ void matrixInit(void)
 #if defined(HUB08)
   hub08Init();
 #elif defined(MAX7219)
-  // Init MAX7219
+  max7219Init();
 #endif
   TIMSK1 = (1 << TOIE1);
   TCCR1B |= (0 << CS12) | (1 << CS11) | (0 << CS10);
@@ -125,7 +125,7 @@ void matrixSetBr(uint8_t level)
 #if defined(HUB08)
   hub08SetBr(level);
 #elif defined(MAX7219)
-  // Set MAX7219 brightness
+  max7219SendCmd(MAX7219_INTENSITY, level);
 #endif
 }
 
@@ -155,6 +155,11 @@ void matrixDrawPixel(uint8_t x, uint8_t y, uint8_t color)
   if (x >= MATRIX_WIDTH || y >= MATRIX_HEIGHT)
     return;
 
+  if (color)
+    scrBig[x] |= (1<<y);
+  else
+    scrBig[x] &= ~(1<<y);
+
 #if defined(HUB08)
   hub08DrawPixel(x, y, color);
 #endif
@@ -172,7 +177,7 @@ void matrixDrawColumn(uint8_t x, uint8_t *data, MatrixRow row)
         matrixDrawPixel(x, r * 8 + y, data[r] & (1 << y));
   }
 #if defined(MAX7219)
-  // Update MAX7219 buffer
+  max7219SendDataBuf(scrBig);
 #endif
 
   return;
@@ -194,7 +199,7 @@ void matrixShift(uint8_t *data)
     }
   }
 #if defined(MAX7219)
-  // Update MAX7219 buffer
+  max7219SendDataBuf(scrBig);
 #endif
 
   return;

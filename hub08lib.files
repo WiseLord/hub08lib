@@ -6,6 +6,8 @@ fonts.h
 hub08.c
 hub08.h
 main.c
+max7219.c
+max7219.h
 Makefile
 pins.h
 matrix.h
