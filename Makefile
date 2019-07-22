@@ -13,10 +13,10 @@ BUILDDIR = build
 
 # Compiler options
 OPTIMIZE = -Os -mcall-prologues -fshort-enums -ffunction-sections -fdata-sections
-DEBUG    = -g -Wall -Werror
-DEPS     = -MMD -MP -MT $(BUILDDIR)/$(*F).o -MF $(BUILDDIR)/$(*D)/$(*F).d
-CFLAGS   = $(DEBUG) -lm $(OPTIMIZE) $(DEPS) -mmcu=$(MCU) -DF_CPU=$(F_CPU)
-LDFLAGS  = $(DEBUG) -mmcu=$(MCU) -Wl,-gc-sections -mrelax
+WARNLEVEL = -Wall -Werror
+CFLAGS = $(WARNLEVEL) -lm $(OPTIMIZE) -mmcu=$(MCU) -DF_CPU=$(F_CPU)
+CFLAGS += -MMD -MP -MT $(BUILDDIR)/$(*F).o -MF $(BUILDDIR)/$(*D)/$(*F).d
+LDFLAGS = $(WARNLEVEL) -mmcu=$(MCU) -Wl,--gc-sections -Wl,--relax
 
 # AVR toolchain and flasher
 CC       = avr-gcc
@@ -34,19 +34,19 @@ AD_CMD   = $(AD_MCU) $(AD_PROG) $(AD_PORT) -V
 # Build objects
 OBJS     = $(addprefix $(BUILDDIR)/, $(SRCS:.c=.o))
 ELF      = $(BUILDDIR)/$(TARG).elf
+HEX      = flash/$(TARG).hex
 
-all: $(ELF) size
+all: $(HEX) size
 
-# Dependencies
--include $(OBJS:.o=.d)
+$(HEX): $(ELF)
+	$(OBJCOPY) -O ihex -R .eeprom -R .nwram $(ELF) $(HEX)
 
 $(ELF): $(OBJS)
 	@mkdir -p $(BUILDDIR) flash
 	$(CC) $(LDFLAGS) -o $(ELF) $(OBJS) -lm
-	$(OBJCOPY) -O ihex -R .eeprom -R .nwram $(ELF) flash/$(TARG).hex
 	$(OBJDUMP) -h -S $(ELF) > $(BUILDDIR)/$(TARG).lss
 
-size:
+size: $(ELF)
 	@sh ./size.sh $(ELF)
 
 $(BUILDDIR)/%.o: %.c
@@ -64,3 +64,6 @@ flash: $(ELF)
 .PHONY: fuse
 fuse:
 	$(AVRDUDE) $(AD_CMD) -U lfuse:w:0xff:m -U hfuse:w:0xd8:m -U efuse:w:0xCB:m
+
+# Other dependencies
+-include $(OBJS:.o=.d)
